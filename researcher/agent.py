@@ -11,8 +11,10 @@ from .mcp_tools import ToolError
 
 PROMPTS = Path(__file__).parent / "prompts"
 CITE = re.compile(r"\[(\d+)\]")
+MDLINK = re.compile(r"\[([^\]]*)\]\([^)]*\)")
 HEADING = re.compile(r"^\s*#{1,6}\s+(.+?)\s*#*\s*$", re.M)
 MAX_GATHER_TURNS = 40
+MAX_NUDGES = 2
 MAX_FAILS = 3  # consecutive tool failures per step before a failure line; SRS-FR-009
 log = get_logger("agent")
 
@@ -74,7 +76,8 @@ def _progress(state: dict, cfg: Config) -> str:
     return f"{len(state['sources'])} sources saved, target {cfg.min_sources}-{cfg.max_sources}"
 
 
-async def _run_call(call: dict, specs: dict, folder: Path, state: dict, tools, cfg: Config, emit) -> tuple[str, str]:
+async def _run_call(call: dict, specs: dict, folder: Path, state: dict, tools, cfg: Config, emit,
+                    seen: dict | None = None) -> tuple[str, str]:
     """Validate and execute one model tool call. Returns (result_text, outcome) with outcome in ok|fail|invalid|skip|dup."""
     name = call["name"]
     if name not in specs:
@@ -92,6 +95,18 @@ async def _run_call(call: dict, specs: dict, folder: Path, state: dict, tools, c
         emit("invalid_tool_call", tool=name, error=f"missing {missing}")
         return f"Error: {name} needs the argument(s) {', '.join(missing)}.", "invalid"
 
+    sig = name + json.dumps(args, sort_keys=True)
+    if seen is not None and sig in seen:  # the exact same call again: don't re-run it (inc10 finding)
+        emit("repeat_call", tool=name)
+        return (f"You already made this exact call. Its result was: {seen[sig]}. "
+                f"Use a different query or source, or stop if you have enough ({_progress(state, cfg)})."), "dup"
+    result, outcome = await _execute(name, args, folder, state, tools, cfg, emit)
+    if seen is not None and (outcome == "fail" or (outcome == "ok" and name == "searxng_web_search")):
+        seen[sig] = result.splitlines()[0][:200] if outcome == "fail" else "see the earlier result above"
+    return result, outcome
+
+
+async def _execute(name: str, args: dict, folder: Path, state: dict, tools, cfg: Config, emit) -> tuple[str, str]:
     task = state["id"]
     try:
         if name == "searxng_web_search":
@@ -114,7 +129,8 @@ async def _run_call(call: dict, specs: dict, folder: Path, state: dict, tools, c
         if not text.strip():
             return "Error: the page was empty. Try a different source.", "fail"
         m = HEADING.search(text)
-        n = store.add_source(folder, state, url, m.group(1) if m else url, text)
+        title = MDLINK.sub(r"\1", m.group(1)).replace("¶", "").strip() if m else ""
+        n = store.add_source(folder, state, url, title or url, text)
         emit("saved", url=url, n=n)
         return f"saved as [{n}] ({_progress(state, cfg)}): {text[:1500]}", "ok"
     except ToolError as e:
@@ -123,29 +139,50 @@ async def _run_call(call: dict, specs: dict, folder: Path, state: dict, tools, c
 
 
 async def tool_loop(folder: Path, state: dict, msgs: list[dict], llm, tools, cfg: Config, emit, *,
-                    thinking: bool, max_turns: int, max_new: int, step: str) -> str | None:
+                    thinking: bool, max_turns: int, max_new: int, step: str, min_total: int = 0) -> str | None:
     """Shared model ↔ tool loop for gather and follow-ups. Returns the final assistant text, or None if it stopped on a cap."""
     schemas = await tools.schemas()
     specs = {s["function"]["name"]: s for s in schemas}
     start = len(state["sources"])
-    fails = dups = 0
+    fails = dups = nudges = 0
+    seen: dict[str, str] = {}
+
+    def nudge() -> bool:
+        """Below min_total, push the model to keep gathering, at most MAX_NUDGES times (SRS-FR-008; inc10 finding)."""
+        nonlocal nudges, dups
+        if len(state["sources"]) >= min_total or nudges >= MAX_NUDGES:
+            return False
+        nudges, dups = nudges + 1, 0
+        unrun = [q for q in state["plan"] if q not in state["queries_done"]]
+        emit("nudge", count=len(state["sources"]))
+        msgs.append({"role": "user", "content": (
+            f"Only {len(state['sources'])} sources are saved; the target is {cfg.min_sources}-{cfg.max_sources}. "
+            f"Keep gathering: run searches you have not run yet"
+            + (f" (for example: {'; '.join(unrun[:3])})" if unrun else " with new angles on the question")
+            + ", then read new pages from the results. Do not re-read saved URLs.")})
+        return True
+
     for _ in range(max_turns):
         _trim(msgs, schemas, cfg.context_budget)
         r = await llm.chat(msgs, tools=schemas, thinking=thinking, task=state["id"])
         if not r["tool_calls"]:
+            if nudge():
+                msgs.append({"role": "assistant", "content": r["content"] or ""})
+                msgs[-1], msgs[-2] = msgs[-2], msgs[-1]  # assistant reply first, then the nudge
+                continue
             return r["content"]
         msgs.append({"role": "assistant", "content": r["content"] or "", "tool_calls": [
             {"id": c["id"], "type": "function", "function": {"name": c["name"], "arguments": c["arguments"]}}
             for c in r["tool_calls"]]})
         for c in r["tool_calls"]:
-            result, outcome = await _run_call(c, specs, folder, state, tools, cfg, emit)
+            result, outcome = await _run_call(c, specs, folder, state, tools, cfg, emit, seen)
             msgs.append({"role": "tool", "tool_call_id": c["id"], "content": result})
             if outcome != "invalid":
                 store.save_state(folder, state)
             if outcome in ("fail", "invalid"):
                 fails += 1
                 if fails >= MAX_FAILS:
-                    line = f"{step}: {MAX_FAILS} tool calls failed in a row; last error: {result.splitlines()[0][:200]}"
+                    line = f"{step}: {MAX_FAILS} tool calls failed in a row; last error: {result.splitlines()[0].split(". Retry with")[0][:200]}"
                     state["failures"].append(line)
                     store.save_state(folder, state)
                     emit("failure", error=line)
@@ -155,7 +192,8 @@ async def tool_loop(folder: Path, state: dict, msgs: list[dict], llm, tools, cfg
             dups = dups + 1 if outcome == "dup" else 0
             if dups >= MAX_FAILS:  # the model keeps re-reading saved pages: it is done or stuck (inc07 finding)
                 emit("stuck", count=len(state["sources"]))
-                return None
+                if not nudge():
+                    return None
             if len(state["sources"]) - start >= max_new:  # SRS-FR-008 cap
                 emit("source_cap", count=len(state["sources"]))
                 return None
@@ -196,7 +234,7 @@ async def _gather(folder: Path, state: dict, llm, tools, cfg: Config, emit, resu
             f"Sources already saved (do not read these again):\n{saved}\n\n"
             f"Continue gathering until {cfg.min_sources}-{cfg.max_sources} sources are saved ({_progress(state, cfg)}).")})
     await tool_loop(folder, state, msgs, llm, tools, cfg, emit, thinking=False, max_turns=MAX_GATHER_TURNS,
-                    max_new=remaining, step="gather")
+                    max_new=remaining, step="gather", min_total=cfg.min_sources)
 
 
 async def _synthesize(folder: Path, state: dict, llm, cfg: Config, emit) -> None:

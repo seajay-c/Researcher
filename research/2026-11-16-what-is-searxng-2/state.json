@@ -1,0 +1,81 @@
+{
+  "id": "2026-11-16-what-is-searxng-2",
+  "question": "What is SearXNG?",
+  "status": "done",
+  "phase": "done",
+  "created": "2026-11-17T05:30:27.508462Z",
+  "updated": "2026-11-17T05:41:08.773340Z",
+  "plan": [
+    "SearXNG official website",
+    "SearXNG metasearch engine what is it",
+    "SearXNG vs SearX fork history",
+    "SearXNG GitHub repository",
+    "SearXNG privacy features how it works",
+    "SearXNG 2026 updates release"
+  ],
+  "queries_done": [
+    "SearXNG official website metasearch engine",
+    "SearXNG vs SearX fork history metasearch",
+    "SearXNG privacy features how it works no tracking",
+    "SearXNG 2026 release notes new version changelog"
+  ],
+  "failures": [],
+  "sources": [
+    {
+      "n": 1,
+      "url": "https://docs.searxng.org/user/about.html",
+      "url_hash": "27ce45c552a4b7c5b7dfdcff508ec31c54731066d1c891709fcd659ca3b20ff4",
+      "title": "About SearXNG",
+      "fetched_at": "2026-11-17T05:31:28.905348Z",
+      "file": "sources/01-docs.searxng.org.md"
+    },
+    {
+      "n": 2,
+      "url": "https://en.wikipedia.org/wiki/SearXNG",
+      "url_hash": "2f8424855a2a6488f7d1a20010b86648307875e8869d7d400ed8f234ac4163d1",
+      "title": "Contents",
+      "fetched_at": "2026-11-17T05:31:48.851457Z",
+      "file": "sources/02-en.wikipedia.org.md"
+    },
+    {
+      "n": 3,
+      "url": "https://github.com/searxng/searxng",
+      "url_hash": "86fa43605b5b976273f7135b971f4d207f5028164761c079666f4f8aa6bf7746",
+      "title": "Navigation Menu",
+      "fetched_at": "2026-11-17T05:32:01.406490Z",
+      "file": "sources/03-github.com.md"
+    },
+    {
+      "n": 4,
+      "url": "https://github.com/searx/searx",
+      "url_hash": "0766bef45eadddc010dcb6c75320d39647b88a29920606c960271e7edf218834",
+      "title": "Navigation Menu",
+      "fetched_at": "2026-11-17T05:32:35.771449Z",
+      "file": "sources/04-github.com.md"
+    },
+    {
+      "n": 5,
+      "url": "https://docs.searxng.org/own-instance.html",
+      "url_hash": "6eca5fc42e8993a4dd0843fb7cbc5dc57f1d2ef70e35504dad20229616cd5f9d",
+      "title": "Why use a private instance?",
+      "fetched_at": "2026-11-17T05:33:03.575641Z",
+      "file": "sources/05-docs.searxng.org.md"
+    },
+    {
+      "n": 6,
+      "url": "https://github.com/searxng/searxng/releases",
+      "url_hash": "1227423665d4528109ef6cf02e8f6d057fb7bd1d5780570dd97cc5a91520a1f9",
+      "title": "Navigation Menu",
+      "fetched_at": "2026-11-17T05:33:34.288115Z",
+      "file": "sources/06-github.com.md"
+    },
+    {
+      "n": 7,
+      "url": "https://en.wikipedia.org/wiki/Searx",
+      "url_hash": "bd130bfc0bd69578396f4935d491a9f7af393fc20e78f9f005456a9a775dae16",
+      "title": "Contents",
+      "fetched_at": "2026-11-17T05:33:46.414021Z",
+      "file": "sources/07-en.wikipedia.org.md"
+    }
+  ]
+}

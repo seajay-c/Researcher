@@ -13,7 +13,7 @@ Status values: `not started`, `green`, `yellow`, `red`, `rolled back`. Put evide
 | 07 | `07-research-loop.md` | FR-002–004, 006–009, 017, NFR-004 | green | fake-run tests | Citations match files, retries and failure line, bad JSON not executed, no refetch | Report written but a citation is stripped as bad | `BudgetExceeded`, an invalid call is executed, or a citation has no file |
 | 08 | `08-resume.md` | FR-010, FR-004 | green | kill/resume test | Resume finishes with no refetch and no replanning | Finishes but replans | Duplicate sources or unreadable `state.json` |
 | 09 | `09-followup.md` | FR-011, FR-012, NFR-004 | green | follow-up tests | Covered question makes no fetch, uncovered one adds the next source, `followups.md` has 2 entries | Answers but adds a needless fetch | New source lands outside the folder, or numbering collides |
-| 10 | `10-cli.md` | FR-001, 010, 011 | not started | live CLI run | Live research has ≥8 sources, resume works, ask answers | Fewer than 8 sources | Live run fails |
+| 10 | `10-cli.md` | FR-001, 010, 011 | green | live CLI run | Live research has ≥8 sources, resume works, ask answers | Fewer than 8 sources | Live run fails |
 | 11 | `11-gui-read.md` | FR-013, 014, NFR-007, 009 | not started | web tests + LAN open | List, links and source page work, opens from the LAN, `/health` returns JSON | Works only from localhost | Path traversal works, or pages error |
 | 12 | `12-gui-live.md` | FR-015, 016, 010, NFR-002 | not started | browser run | Live progress, follow-up saved, resume on restart, no LLM overlap | Progress shows only after a reload | Overlapping model calls, or a task is stuck `running` |
 | 13 | `13-e2e-verify.md` | FR-006–008, NFR-001, 005, 006, 008 | not started | pcap + checks | Only the m1max and MCP in the pcap, all checks pass with evidence | A `should` row fails | An unexpected outbound host, or a `must` row fails |
@@ -83,3 +83,16 @@ Status values: `not started`, `green`, `yellow`, `red`, `rolled back`. Put evide
 - `pytest -q` → 35 passed. Covered question: no search or read, answer cites `[2]`, bad `[9]` stripped, `followups.md` has the entry (FR-011, FR-012). Uncovered question: search + read → `sources/03-c.net.md` (next number, same folder) cited as `[3]` (FR-011). Two follow-ups → 2 `## Q:` entries. Bad JSON in a follow-up tool call is not executed (NFR-004).
 - Reuses `tool_loop` from inc07 (no second copy); 15 turns, `max_sources` new sources, `thinking=True`. If the loop stops on a cap, one final call without tools asks for the answer. Empty answer raises.
 - Known gap: a follow-up on a folder whose research is still running would race on `state.json` (two in-memory copies). Not covered by the SRS; revisit if the GUI allows it (inc12).
+
+### 10
+- Run 1 (`research/2026-11-16-what-is-searxng`): Ctrl-C after 3 saved → exit 130; `resume` → **red**. Resume itself was correct (no plan call, no refetch of [1]–[3]), but (a) the model re-read one 404 URL ~30 times (failure counter reset each 3, so 10 identical failure lines) and (b) synth returned empty: input est 41785 tokens left 6215 output tokens and thinking used all of them (`finish=length`, 760 s).
+- Red-zone steps: isolated synth with a raw call → `reasoning_effort` is honored by the engine (`low`: 432 reasoning chars/21 s; `medium`: 1369/48 s; unset: 5347/102 s on a small prompt). Mitigations (bug fixes, recorded here):
+  - `llm.py`: thinking calls send `reasoning_effort="medium"`; an empty `finish=length` reply is retried once with `low`. `_send` returns its own timing (no shared `_t0`).
+  - `agent.py` `tool_loop`: an identical repeat call (same name + args) is not re-run; it returns the earlier outcome and counts as a duplicate, so 3 in a row stop the loop.
+  - `agent.py` gather: below `MIN_SOURCES`, a stop or stuck model gets up to 2 nudges listing unrun plan queries. Deviation from inc07 text "No tool_calls → stop", needed for FR-008 (must); followups unchanged.
+  - Source titles drop markdown links/¶; failure lines drop the model-facing "Retry with…" hint.
+- Run 1 finished by `resume research/2026-11-16-what-is-searxng` (from `failed`/`synthesize`): effort=medium, `finish=stop`, 399 s, report cites [1]–[5], all files present.
+- Run 2 (`-2`): Ctrl-C after 3 saved → `resume` continued at `gather` with 3 sources, no plan call, every page URL fetched once across both processes (robots.txt fetched once per process; in-memory cache) (FR-010, FR-004). Stopped at 7 sources → yellow → nudge fix above. `ask research/2026-11-16-what-is-searxng-2 "Who maintains it?"` → cited answer [1][3][4] from saved sources, no search/read (FR-011).
+- Run 3 (`-3`): `research "What is SearXNG?"` → folder `research/2026-11-16-what-is-searxng-3` (FR-001), **8 sources**, cited [1]–[8], 0 missing files, 0 failures, status done, 11 min 49 s (FR-008). One nudge, two stuck stops.
+- `pytest -q` → 38 passed.
+- The CLI only parses arguments and calls `agent`/`store`/`config`; events print as JSON lines on stdout, logs as JSON lines on stderr. `ValueError`/`ToolError` → exit 1, Ctrl-C → exit 130 with a resume hint.

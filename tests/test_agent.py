@@ -166,7 +166,7 @@ async def test_duplicate_reads_stop_gather(cfg):
     tools = FakeTools(PAGES)
     await run_research(folder, llm, tools, cfg)
     gather_calls = [1 for st, _, _ in llm.calls if st == "gather"]
-    assert tools.reads == ["https://a.com/1"] and len(gather_calls) == 4  # 1 save + 3 duplicates, then stop
+    assert tools.reads == ["https://a.com/1"] and len(gather_calls) == 10  # 1 save + 3 duplicates × (1 + 2 nudges)
 
 
 async def test_max_tokens_inside_budget(cfg):
@@ -292,3 +292,45 @@ async def test_followup_bad_json_not_executed(cfg):
     llm = FakeLLM({"followup": [[{"name": "web_url_read", "arguments": "{bad"}], "Answer [1]."]})
     await ask(folder, "q?", llm, tools, cfg)
     assert tools.reads == [] and "not valid JSON" in llm.calls[1][2][-1]["content"]  # SRS-NFR-004
+
+
+async def test_repeated_failing_call_stops(cfg):
+    folder = store.new_task(cfg.research_dir, "q")
+    bad = "https://x.com/404"
+    llm = FakeLLM({"plan": ['{"queries": ["q"]}'], "gather": [[call("web_url_read", url=bad)]] * 30, "synth": ["r"]})
+    tools = FakeTools(fail_urls=[bad])
+    await run_research(folder, llm, tools, cfg)
+    assert tools.reads == [bad]  # executed once; repeats return the earlier error
+    assert len([1 for st, _, _ in llm.calls if st == "gather"]) == 10  # 3 repeats × (1 + 2 nudges) + the first call
+    assert "You already made this exact call" in llm.calls[3][2][-1]["content"]
+
+
+async def test_low_effort_retry_on_length(cfg):
+    replies = [NS(choices=[NS(finish_reason="length", message=NS(content="", tool_calls=None))]),
+               NS(choices=[NS(finish_reason="stop", message=NS(content="report", tool_calls=None))])]
+    seen = []
+    async def create(**kw):
+        seen.append(kw.get("reasoning_effort"))
+        return replies.pop(0)
+    c = NS(chat=NS(completions=NS(create=create)))
+    r = await LLM(cfg, client=c).chat([{"role": "user", "content": "q"}], thinking=True)
+    assert r["content"] == "report" and seen == ["medium", "low"]
+    seen.clear(); replies.append(NS(choices=[NS(finish_reason="stop", message=NS(content="x", tool_calls=None))]))
+    await LLM(cfg, client=c).chat([{"role": "user", "content": "q"}], thinking=False)
+    assert seen == [None]  # no effort sent when thinking is off
+
+
+async def test_nudge_below_min_sources(cfg):
+    from dataclasses import replace
+    cfg = replace(cfg, min_sources=3)
+    folder = store.new_task(cfg.research_dir, "q")
+    llm = FakeLLM({"plan": ['{"queries": ["q1", "q2"]}'],
+                   "gather": [[call("web_url_read", url="https://s1.com/")], "done early",
+                              [call("web_url_read", url="https://s2.com/")], [call("web_url_read", url="https://s3.com/")], "done"],
+                   "synth": ["r [1][2][3]"]})
+    events = []
+    await run_research(folder, llm, FakeTools(), cfg, on_event=events.append)
+    assert len(store.load_state(folder)["sources"]) == 3  # SRS-FR-008: pushed past the early stop
+    assert [e["event"] for e in events].count("nudge") == 1
+    nudge_msg = [m for m in llm.calls[3][2] if m["role"] == "user"][-1]["content"]
+    assert "Only 1 sources are saved" in nudge_msg and "q1; q2" in nudge_msg

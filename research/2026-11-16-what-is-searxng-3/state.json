@@ -1,0 +1,87 @@
+{
+  "id": "2026-11-16-what-is-searxng-3",
+  "question": "What is SearXNG?",
+  "status": "done",
+  "phase": "done",
+  "created": "2026-11-17T05:48:52.737088Z",
+  "updated": "2026-11-17T06:00:41.569927Z",
+  "plan": [
+    "SearXNG official website",
+    "SearXNG metasearch engine what is it",
+    "SearXNG vs SearX fork history",
+    "SearXNG GitHub repository",
+    "SearXNG privacy features how it works",
+    "SearXNG 2026 updates release"
+  ],
+  "queries_done": [
+    "SearXNG official website metasearch engine",
+    "SearXNG fork of SearX history development"
+  ],
+  "failures": [],
+  "sources": [
+    {
+      "n": 1,
+      "url": "https://docs.searxng.org/user/about.html",
+      "url_hash": "27ce45c552a4b7c5b7dfdcff508ec31c54731066d1c891709fcd659ca3b20ff4",
+      "title": "About SearXNG",
+      "fetched_at": "2026-11-17T05:49:22.454073Z",
+      "file": "sources/01-docs.searxng.org.md"
+    },
+    {
+      "n": 2,
+      "url": "https://en.wikipedia.org/wiki/SearXNG",
+      "url_hash": "2f8424855a2a6488f7d1a20010b86648307875e8869d7d400ed8f234ac4163d1",
+      "title": "Contents",
+      "fetched_at": "2026-11-17T05:49:34.727596Z",
+      "file": "sources/02-en.wikipedia.org.md"
+    },
+    {
+      "n": 3,
+      "url": "https://github.com/searxng/searxng",
+      "url_hash": "86fa43605b5b976273f7135b971f4d207f5028164761c079666f4f8aa6bf7746",
+      "title": "Navigation Menu",
+      "fetched_at": "2026-11-17T05:49:41.997416Z",
+      "file": "sources/03-github.com.md"
+    },
+    {
+      "n": 4,
+      "url": "https://www.searchengines.net/searxng/",
+      "url_hash": "76adf110e977060e91011821ca51631e2f0ec4a7bd957cae603426d956e6a1ac",
+      "title": "SearXNG",
+      "fetched_at": "2026-11-17T05:49:50.495618Z",
+      "file": "sources/04-www.searchengines.net.md"
+    },
+    {
+      "n": 5,
+      "url": "https://docs.searxng.org/",
+      "url_hash": "8dd6d80787caae8aece62ffe97281b542abdb6949ebf40660208dab598bc8cf6",
+      "title": "Welcome to SearXNG",
+      "fetched_at": "2026-11-17T05:50:00.825632Z",
+      "file": "sources/05-docs.searxng.org.md"
+    },
+    {
+      "n": 6,
+      "url": "https://docs.searxng.org/own-instance.html",
+      "url_hash": "6eca5fc42e8993a4dd0843fb7cbc5dc57f1d2ef70e35504dad20229616cd5f9d",
+      "title": "Why use a private instance?",
+      "fetched_at": "2026-11-17T05:50:11.015423Z",
+      "file": "sources/06-docs.searxng.org.md"
+    },
+    {
+      "n": 7,
+      "url": "https://docs.searxng.org/user/search-syntax.html",
+      "url_hash": "c07daf4f6661f0646c72ffd84c381ebcce0d8659072e7c816bdd5e1c33b94b12",
+      "title": "Search syntax",
+      "fetched_at": "2026-11-17T05:50:37.537206Z",
+      "file": "sources/07-docs.searxng.org.md"
+    },
+    {
+      "n": 8,
+      "url": "https://www.ssdnodes.com/learn/searx-vs-searxng",
+      "url_hash": "1b57dd6edbe4c5c298fa59e4c122900a7f7325bfe335be9e3c7eb72294189e99",
+      "title": "Searx vs SearXNG: is Searx dead?",
+      "fetched_at": "2026-11-17T05:51:33.889413Z",
+      "file": "sources/08-www.ssdnodes.com.md"
+    }
+  ]
+}

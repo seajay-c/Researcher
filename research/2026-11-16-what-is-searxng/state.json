@@ -1,12 +1,77 @@
 {
   "id": "2026-11-16-what-is-searxng",
   "question": "What is SearXNG?",
-  "status": "running",
-  "phase": "plan",
+  "status": "done",
+  "phase": "done",
   "created": "2026-11-17T04:51:02.004492Z",
-  "updated": "2026-11-17T04:51:02.004553Z",
-  "plan": [],
-  "queries_done": [],
-  "failures": [],
-  "sources": []
+  "updated": "2026-11-17T05:29:44.756981Z",
+  "plan": [
+    "SearXNG official site",
+    "What is SearXNG metasearch engine",
+    "SearXNG GitHub",
+    "SearXNG privacy search engine features",
+    "SearXNG vs DuckDuckGo",
+    "SearXNG 2026 update news"
+  ],
+  "queries_done": [
+    "SearXNG official site privacy metasearch engine",
+    "SearXNG GitHub",
+    "SearXNG privacy search engine features",
+    "SearXNG vs DuckDuckGo",
+    "SearXNG 2026 update news"
+  ],
+  "failures": [
+    "gather: 3 tool calls failed in a row; last error: Error: web_url_read error: 🚫 Website Error (404): Page not found. Retry with a different query or source.",
+    "gather: 3 tool calls failed in a row; last error: Error: web_url_read error: 🚫 Website Error (404): Page not found. Retry with a different query or source.",
+    "gather: 3 tool calls failed in a row; last error: Error: web_url_read error: 🚫 Website Error (404): Page not found. Retry with a different query or source.",
+    "gather: 3 tool calls failed in a row; last error: Error: web_url_read error: 🚫 Website Error (404): Page not found. Retry with a different query or source.",
+    "gather: 3 tool calls failed in a row; last error: Error: web_url_read error: 🚫 Website Error (404): Page not found. Retry with a different query or source.",
+    "gather: 3 tool calls failed in a row; last error: Error: web_url_read error: 🚫 Website Error (404): Page not found. Retry with a different query or source.",
+    "gather: 3 tool calls failed in a row; last error: Error: web_url_read error: 🚫 Website Error (404): Page not found. Retry with a different query or source.",
+    "gather: 3 tool calls failed in a row; last error: Error: web_url_read error: 🚫 Website Error (404): Page not found. Retry with a different query or source.",
+    "gather: 3 tool calls failed in a row; last error: Error: web_url_read error: 🚫 Website Error (404): Page not found. Retry with a different query or source.",
+    "gather: 3 tool calls failed in a row; last error: Error: web_url_read error: 🚫 Website Error (404): Page not found. Retry with a different query or source."
+  ],
+  "sources": [
+    {
+      "n": 1,
+      "url": "https://docs.searxng.org/user/about.html",
+      "url_hash": "27ce45c552a4b7c5b7dfdcff508ec31c54731066d1c891709fcd659ca3b20ff4",
+      "title": "About SearXNG[¶](#about-searxng \"Link to this heading\")",
+      "fetched_at": "2026-11-17T04:54:22.406293Z",
+      "file": "sources/01-docs.searxng.org.md"
+    },
+    {
+      "n": 2,
+      "url": "https://github.com/searxng/searxng",
+      "url_hash": "86fa43605b5b976273f7135b971f4d207f5028164761c079666f4f8aa6bf7746",
+      "title": "Navigation Menu",
+      "fetched_at": "2026-11-17T04:55:31.999520Z",
+      "file": "sources/02-github.com.md"
+    },
+    {
+      "n": 3,
+      "url": "https://docs.searxng.org/",
+      "url_hash": "8dd6d80787caae8aece62ffe97281b542abdb6949ebf40660208dab598bc8cf6",
+      "title": "Welcome to SearXNG[¶](#welcome-to-searxng \"Link to this heading\")",
+      "fetched_at": "2026-11-17T04:56:02.169526Z",
+      "file": "sources/03-docs.searxng.org.md"
+    },
+    {
+      "n": 4,
+      "url": "https://docs.searxng.org/own-instance.html",
+      "url_hash": "6eca5fc42e8993a4dd0843fb7cbc5dc57f1d2ef70e35504dad20229616cd5f9d",
+      "title": "Why use a private instance?[¶](#why-use-a-private-instance \"Link to this heading\")",
+      "fetched_at": "2026-11-17T04:59:45.308832Z",
+      "file": "sources/04-docs.searxng.org.md"
+    },
+    {
+      "n": 5,
+      "url": "https://searx.space/",
+      "url_hash": "b6cf6f49b09df47f8d84b0be564a7e98d6f6fe4d1848473b7765eb0430d5ecba",
+      "title": "75 online instances",
+      "fetched_at": "2026-11-17T05:00:16.751184Z",
+      "file": "sources/05-searx.space.md"
+    }
+  ]
 }
