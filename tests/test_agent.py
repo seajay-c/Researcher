@@ -242,3 +242,53 @@ async def test_kill_leaves_task_running_for_resume(cfg):
     with pytest.raises(asyncio.CancelledError):
         await run_research(folder, llm, FakeTools(PAGES), cfg)
     assert store.load_state(folder)["status"] == "running" and store.unfinished(cfg.research_dir) == [folder]
+
+
+from researcher.agent import ask
+
+
+def _done_task(cfg):
+    folder = store.new_task(cfg.research_dir, "What is SearXNG?")
+    s = store.load_state(folder)
+    store.add_source(folder, s, "https://a.com/1", "Alpha", "SearXNG is a metasearch engine.")
+    store.add_source(folder, s, "https://b.org/2", "Beta", "It forks Searx.")
+    store.write_report(folder, "SearXNG is a metasearch engine [1].", s)
+    s["status"] = s["phase"] = "done"; store.save_state(folder, s)
+    return folder
+
+
+async def test_followup_covered_no_tools(cfg):
+    folder = _done_task(cfg)
+    tools = FakeTools()
+    llm = FakeLLM({"followup": ["It is a fork of Searx [2]. Also [9]."]})
+    ans = await ask(folder, "What did it fork?", llm, tools, cfg)
+    assert ans == "It is a fork of Searx [2]. Also ." and tools.reads == tools.searches == []  # SRS-FR-011
+    assert llm.calls[0][1] is True and "[1] SearXNG is a metasearch engine." in llm.calls[0][2][0]["content"]
+    assert "## Q: What did it fork?" in (folder / "followups.md").read_text()  # SRS-FR-012
+
+
+async def test_followup_uncovered_adds_next_source(cfg):
+    folder = _done_task(cfg)
+    tools = FakeTools({"https://c.net/maint": "# Maintainers\nThe SearXNG team maintains it."})
+    llm = FakeLLM({"followup": [[call("searxng_web_search", query="searxng maintainers")],
+                                [call("web_url_read", url="https://c.net/maint")],
+                                "The SearXNG team maintains it [3]."]})
+    ans = await ask(folder, "Who maintains it?", llm, tools, cfg)
+    assert (folder / "sources/03-c.net.md").exists() and "[3]" in ans  # SRS-FR-011: next number, same folder
+    assert [x["n"] for x in store.load_state(folder)["sources"]] == [1, 2, 3]
+
+
+async def test_two_followups_two_entries(cfg):
+    folder = _done_task(cfg)
+    llm = FakeLLM({"followup": ["A [1]."]})
+    await ask(folder, "one?", llm, FakeTools(), cfg)
+    await ask(folder, "two?", llm, FakeTools(), cfg)
+    assert (folder / "followups.md").read_text().count("## Q: ") == 2
+
+
+async def test_followup_bad_json_not_executed(cfg):
+    folder = _done_task(cfg)
+    tools = FakeTools()
+    llm = FakeLLM({"followup": [[{"name": "web_url_read", "arguments": "{bad"}], "Answer [1]."]})
+    await ask(folder, "q?", llm, tools, cfg)
+    assert tools.reads == [] and "not valid JSON" in llm.calls[1][2][-1]["content"]  # SRS-NFR-004

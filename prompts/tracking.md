@@ -12,7 +12,7 @@ Status values: `not started`, `green`, `yellow`, `red`, `rolled back`. Put evide
 | 06 | `06-qwen-prompts.md` | FR-006, 007, 009, 017, NFR-008 | green | prompt checks | 4 prompts, placeholders and few-shot present, grep is clean | A placeholder is missing | A prompt says it can't browse or asks for disclaimers |
 | 07 | `07-research-loop.md` | FR-002–004, 006–009, 017, NFR-004 | green | fake-run tests | Citations match files, retries and failure line, bad JSON not executed, no refetch | Report written but a citation is stripped as bad | `BudgetExceeded`, an invalid call is executed, or a citation has no file |
 | 08 | `08-resume.md` | FR-010, FR-004 | green | kill/resume test | Resume finishes with no refetch and no replanning | Finishes but replans | Duplicate sources or unreadable `state.json` |
-| 09 | `09-followup.md` | FR-011, FR-012, NFR-004 | not started | follow-up tests | Covered question makes no fetch, uncovered one adds the next source, `followups.md` has 2 entries | Answers but adds a needless fetch | New source lands outside the folder, or numbering collides |
+| 09 | `09-followup.md` | FR-011, FR-012, NFR-004 | green | follow-up tests | Covered question makes no fetch, uncovered one adds the next source, `followups.md` has 2 entries | Answers but adds a needless fetch | New source lands outside the folder, or numbering collides |
 | 10 | `10-cli.md` | FR-001, 010, 011 | not started | live CLI run | Live research has ≥8 sources, resume works, ask answers | Fewer than 8 sources | Live run fails |
 | 11 | `11-gui-read.md` | FR-013, 014, NFR-007, 009 | not started | web tests + LAN open | List, links and source page work, opens from the LAN, `/health` returns JSON | Works only from localhost | Path traversal works, or pages error |
 | 12 | `12-gui-live.md` | FR-015, 016, 010, NFR-002 | not started | browser run | Live progress, follow-up saved, resume on restart, no LLM overlap | Progress shows only after a reload | Overlapping model calls, or a task is stuck `running` |
@@ -78,3 +78,8 @@ Status values: `not started`, `green`, `yellow`, `red`, `rolled back`. Put evide
 - A kill (`CancelledError`/`KeyboardInterrupt`) leaves `status=running`, so `unfinished` and `resume_all` pick it up. An `Exception` sets `failed`; running `run_research` on that folder again resets it to `running` and continues from its phase.
 - Isolation test (kill between temp write and `os.replace`): `test_save_state_kill_keeps_old` → previous `state.json` loads.
 - `phase="synthesize"` is saved before the synthesizer runs.
+
+### 09
+- `pytest -q` → 35 passed. Covered question: no search or read, answer cites `[2]`, bad `[9]` stripped, `followups.md` has the entry (FR-011, FR-012). Uncovered question: search + read → `sources/03-c.net.md` (next number, same folder) cited as `[3]` (FR-011). Two follow-ups → 2 `## Q:` entries. Bad JSON in a follow-up tool call is not executed (NFR-004).
+- Reuses `tool_loop` from inc07 (no second copy); 15 turns, `max_sources` new sources, `thinking=True`. If the loop stops on a cap, one final call without tools asks for the answer. Empty answer raises.
+- Known gap: a follow-up on a folder whose research is still running would race on `state.json` (two in-memory copies). Not covered by the SRS; revisit if the GUI allows it (inc12).

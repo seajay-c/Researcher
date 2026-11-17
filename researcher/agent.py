@@ -250,3 +250,28 @@ async def resume_all(root: Path, llm, tools, cfg: Config, on_event=None) -> list
         await run_research(folder, llm, tools, cfg, on_event)
         ids.append(folder.name)
     return ids
+
+
+MAX_FOLLOWUP_TURNS = 15
+
+
+async def ask(folder: Path, question: str, llm, tools, cfg: Config, on_event=None) -> str:
+    state = store.load_state(folder)
+    emit = _emitter(state, on_event)
+    emit("followup", question=question)
+    report = folder / "report.md"
+    summary = report.read_text()[:2000] if report.exists() else "(no report yet)"
+    chunks = rank.top_chunks(question, store.read_sources(folder), cfg.context_budget - 8000)
+    msgs = [{"role": "system", "content": fill("followup", report=summary, chunks=_format_chunks(chunks), question=question)},
+            {"role": "user", "content": question}]
+    answer = await tool_loop(folder, state, msgs, llm, tools, cfg, emit, thinking=True,
+                             max_turns=MAX_FOLLOWUP_TURNS, max_new=cfg.max_sources, step="followup")
+    if answer is None:  # stopped on a cap: ask for the answer without tools
+        msgs.append({"role": "user", "content": "Stop gathering. Answer the question now from the saved sources."})
+        answer = (await llm.chat(msgs, thinking=True, task=state["id"]))["content"]
+    if not (answer or "").strip():
+        raise RuntimeError("follow-up returned no text")
+    answer = clean_citations(answer, state, emit)
+    store.append_followup(folder, question, answer)  # SRS-FR-012
+    emit("answer", sources=len(state["sources"]))
+    return answer
