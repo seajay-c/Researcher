@@ -9,7 +9,7 @@ Status values: `not started`, `green`, `yellow`, `red`, `rolled back`. Put evide
 | 03 | `03-mcp-tools.md` | FR-002, FR-005, NFR-001 | green | live search + read | Live search and read work, robots/rate/timeout tests pass | Unit tests pass, but MCP is not yet reachable from the LAN | Direct fetch used, or robots blocks every URL |
 | 04 | `04-store.md` | FR-001, 003, 004, 006, 012, 013 | green | store tests | All store tests pass | — | Any store test fails, or a write lands outside `RESEARCH_DIR` |
 | 05 | `05-ranker.md` | NFR-003 | green | budget test | Under budget and the relevant chunk is kept | Under budget but the relevant chunk is dropped | Over budget |
-| 06 | `06-qwen-prompts.md` | FR-006, 007, 009, 017, NFR-008 | not started | prompt checks | 4 prompts, placeholders and few-shot present, grep is clean | A placeholder is missing | A prompt says it can't browse or asks for disclaimers |
+| 06 | `06-qwen-prompts.md` | FR-006, 007, 009, 017, NFR-008 | green | prompt checks | 4 prompts, placeholders and few-shot present, grep is clean | A placeholder is missing | A prompt says it can't browse or asks for disclaimers |
 | 07 | `07-research-loop.md` | FR-002–004, 006–009, 017, NFR-004 | not started | fake-run tests | Citations match files, retries and failure line, bad JSON not executed, no refetch | Report written but a citation is stripped as bad | `BudgetExceeded`, an invalid call is executed, or a citation has no file |
 | 08 | `08-resume.md` | FR-010, FR-004 | not started | kill/resume test | Resume finishes with no refetch and no replanning | Finishes but replans | Duplicate sources or unreadable `state.json` |
 | 09 | `09-followup.md` | FR-011, FR-012, NFR-004 | not started | follow-up tests | Covered question makes no fetch, uncovered one adds the next source, `followups.md` has 2 entries | Answers but adds a needless fetch | New source lands outside the folder, or numbering collides |
@@ -55,3 +55,10 @@ Status values: `not started`, `green`, `yellow`, `red`, `rolled back`. Put evide
 ### 05
 - `pytest tests/test_rank.py -q` → 2 passed: 20 sources × 50K chars, budget 8000 → estimated tokens ≤ 8000, the chunk holding the question terms is kept, output sorted by `n`.
 - Standard library only. Paragraphs longer than `max_chars` are cut into `max_chars` pieces so no chunk exceeds it.
+
+### 06
+- `load_prompt` returns all 4 files (planner 1039, executor 2063, synthesizer 1436, followup 1303 chars).
+- Placeholders present: planner `{today} {question}`; executor `{today} {question} {plan} {min_sources} {max_sources}`; synthesizer `{today} {question} {chunks}`; followup `{today} {report} {chunks} {question}`.
+- Executor has both few-shot `<tool_call>` blocks plus a `<tool_response>` failure → retry example.
+- `grep -rinE "cannot browse|can't browse|as an ai|disclaimer" researcher/prompts/` → 5 lines, each a "Never say…/Do not… add disclaimers" instruction. `test_prompts` enforces this.
+- The prompts hold literal JSON braces, so the agent fills placeholders with `str.replace`, not `str.format`.
