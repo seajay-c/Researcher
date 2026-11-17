@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}{{ state.question }} · Researcher{% endblock %}
+{% block content %}
+<h1>{{ state.question }}</h1>
+<p><span class="chip {{ state.status }}">{{ state.status }}</span> <span class="muted">phase {{ state.phase }} · {{ state.sources | length }} sources</span></p>
+{% if report_html %}
+<article class="doc">{{ report_html | safe }}</article>
+{% else %}
+<p class="muted">No report yet. Status: {{ state.status }}, phase: {{ state.phase }}.</p>
+{% endif %}
+<section id="followups">
+<h2>Follow-ups</h2>
+<div class="doc">{{ followups_html | safe }}</div>
+</section>
+{% endblock %}

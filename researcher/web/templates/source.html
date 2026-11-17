@@ -1,0 +1,8 @@
+{% extends "base.html" %}
+{% block title %}[{{ src.n }}] {{ src.title }} · Researcher{% endblock %}
+{% block content %}
+<p class="muted"><a href="/r/{{ state.id }}">← {{ state.question }}</a></p>
+<h1>[{{ src.n }}] {{ src.title }}</h1>
+<p class="muted">Original: {% if src.url.startswith("http://") or src.url.startswith("https://") %}<a href="{{ src.url }}" rel="noopener noreferrer">{{ src.url }}</a>{% else %}{{ src.url }}{% endif %}</p>
+<article class="doc">{{ html | safe }}</article>
+{% endblock %}

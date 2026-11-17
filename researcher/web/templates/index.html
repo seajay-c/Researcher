@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Research</h1>
+{% if tasks %}
+<ul class="tasks">
+{% for t in tasks %}
+  <li><a href="/r/{{ t.id }}">{{ t.question }}</a><br>
+  <span class="chip {{ t.status }}">{{ t.status }}</span> <span class="muted">{{ t.created[:16] | replace("T", " ") }} UTC</span></li>
+{% endfor %}
+</ul>
+{% else %}
+<p class="muted">No research yet.</p>
+{% endif %}
+{% endblock %}

@@ -14,7 +14,7 @@ Status values: `not started`, `green`, `yellow`, `red`, `rolled back`. Put evide
 | 08 | `08-resume.md` | FR-010, FR-004 | green | kill/resume test | Resume finishes with no refetch and no replanning | Finishes but replans | Duplicate sources or unreadable `state.json` |
 | 09 | `09-followup.md` | FR-011, FR-012, NFR-004 | green | follow-up tests | Covered question makes no fetch, uncovered one adds the next source, `followups.md` has 2 entries | Answers but adds a needless fetch | New source lands outside the folder, or numbering collides |
 | 10 | `10-cli.md` | FR-001, 010, 011 | green | live CLI run | Live research has ≥8 sources, resume works, ask answers | Fewer than 8 sources | Live run fails |
-| 11 | `11-gui-read.md` | FR-013, 014, NFR-007, 009 | not started | web tests + LAN open | List, links and source page work, opens from the LAN, `/health` returns JSON | Works only from localhost | Path traversal works, or pages error |
+| 11 | `11-gui-read.md` | FR-013, 014, NFR-007, 009 | green | web tests + LAN open | List, links and source page work, opens from the LAN, `/health` returns JSON | Works only from localhost | Path traversal works, or pages error |
 | 12 | `12-gui-live.md` | FR-015, 016, 010, NFR-002 | not started | browser run | Live progress, follow-up saved, resume on restart, no LLM overlap | Progress shows only after a reload | Overlapping model calls, or a task is stuck `running` |
 | 13 | `13-e2e-verify.md` | FR-006–008, NFR-001, 005, 006, 008 | not started | pcap + checks | Only the m1max and MCP in the pcap, all checks pass with evidence | A `should` row fails | An unexpected outbound host, or a `must` row fails |
 
@@ -96,3 +96,9 @@ Status values: `not started`, `green`, `yellow`, `red`, `rolled back`. Put evide
 - Run 3 (`-3`): `research "What is SearXNG?"` → folder `research/2026-11-16-what-is-searxng-3` (FR-001), **8 sources**, cited [1]–[8], 0 missing files, 0 failures, status done, 11 min 49 s (FR-008). One nudge, two stuck stops.
 - `pytest -q` → 38 passed.
 - The CLI only parses arguments and calls `agent`/`store`/`config`; events print as JSON lines on stdout, logs as JSON lines on stderr. `ValueError`/`ToolError` → exit 1, Ctrl-C → exit 130 with a resume hint.
+
+### 11
+- `pytest -q` → 42 passed. `test_web.py`: list newest first with status (FR-013); `[2]` → `<a class="cite" href="/r/<id>/s/2">[2]</a>`, unknown `[9]` stays text (FR-014); source page renders with its original-URL link; raw `<script>` from a page is escaped (markdown-it `html=False`); `/r/..%2F..`, `/r/%2E%2E`, `/r/..%2F..%2Fetc/s/1`, `/r/%2E%2E/s/1`, `/r/nope` → 404; pending task shows "No report yet"; `/health` probes `{M1MAX_URL}/models` with the key and `{MCP base}/health`.
+- Live: `python -m researcher serve` on `0.0.0.0:8090`. From the m1max (another LAN machine): `GET http://12.0.0.179:8090/` → 200, `/health` → `{"m1max":true,"mcp":true}`; tailnet `http://100.100.88.116:8090/` → 200 (NFR-007, NFR-009). Report `-3` has citation links `/s/1`… and `/s/2` → 200.
+- Task ids with `/`, `\` or `..` are rejected, and the resolved folder must sit directly in `RESEARCH_DIR` with a `state.json`. Source pages link the original URL only for `http(s)` URLs.
+- Note: a bare `/r/..` is normalized to `/` by HTTP clients before it is sent, so it shows the index page; it never reaches the route.

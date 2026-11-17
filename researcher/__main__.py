@@ -57,8 +57,10 @@ def main(argv: list[str] | None = None) -> int:
         elif args.cmd == "ask":
             asyncio.run(_ask(cfg, args.folder, args.question))
         else:
-            print("not implemented")
-            return 2
+            import uvicorn
+
+            from .web.app import create_app
+            uvicorn.run(create_app(cfg), host=cfg.gui_host, port=cfg.gui_port)  # SRS-NFR-007: no auth
     except (ValueError, ToolError) as e:
         print(f"error: {e}", file=sys.stderr)
         return 1
