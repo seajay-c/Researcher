@@ -22,11 +22,13 @@ class JsonFormatter(logging.Formatter):
 
 
 def get_logger(name: str) -> logging.Logger:
-    root = logging.getLogger("researcher")
-    if not root.handlers:
+    # The JSON handler sits on the root logger so uvicorn, mcp and httpx records are JSON lines too (SRS-NFR-006).
+    root = logging.getLogger()
+    if not any(isinstance(h.formatter, JsonFormatter) for h in root.handlers):
         h = logging.StreamHandler(sys.stderr)
         h.setFormatter(JsonFormatter())
         root.addHandler(h)
         root.setLevel(logging.INFO)
-        root.propagate = False
-    return root.getChild(name) if name != "researcher" else root
+        for noisy in ("httpx", "httpx2", "httpcore", "openai", "mcp"):
+            logging.getLogger(noisy).setLevel(logging.WARNING)
+    return logging.getLogger("researcher").getChild(name) if name != "researcher" else logging.getLogger("researcher")

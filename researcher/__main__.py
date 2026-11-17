@@ -6,6 +6,7 @@ from pathlib import Path
 
 from . import agent, config, store
 from .llm import LLM
+from .log import get_logger
 from .mcp_tools import Tools, ToolError
 
 
@@ -48,6 +49,7 @@ def main(argv: list[str] | None = None) -> int:
     sub.add_parser("serve", help="run the web GUI")
     args = p.parse_args(argv)
 
+    get_logger("cli")  # install JSON logging before any library logs
     try:
         cfg = config.load()
         if args.cmd == "research":
@@ -60,7 +62,8 @@ def main(argv: list[str] | None = None) -> int:
             import uvicorn
 
             from .web.app import create_app
-            uvicorn.run(create_app(cfg), host=cfg.gui_host, port=cfg.gui_port)  # SRS-NFR-007: no auth
+            # log_config=None: uvicorn adds no plain-text handlers; its records go to the root JSON handler (SRS-NFR-006)
+            uvicorn.run(create_app(cfg), host=cfg.gui_host, port=cfg.gui_port, log_config=None)  # SRS-NFR-007: no auth
     except (ValueError, ToolError) as e:
         print(f"error: {e}", file=sys.stderr)
         return 1

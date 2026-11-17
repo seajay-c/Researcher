@@ -53,14 +53,10 @@ async def test_schemas_filtered(cfg):
 
 async def test_robots_disallow(cfg, clock, caplog):
     caplog.set_level(logging.INFO, logger="researcher")
-    logging.getLogger("researcher").propagate = True
-    try:
-        t = Tools(cfg, FakeSession())
-        assert await t.read_url("https://a.com/private/x") is None
-        assert "skipped: robots" in [r.getMessage() for r in caplog.records]
-        assert await t.read_url("https://a.com/ok") == "# Page\nbody"
-    finally:
-        logging.getLogger("researcher").propagate = False
+    t = Tools(cfg, FakeSession())
+    assert await t.read_url("https://a.com/private/x") is None
+    assert "skipped: robots" in [r.getMessage() for r in caplog.records]
+    assert await t.read_url("https://a.com/ok") == "# Page\nbody"
 
 
 async def test_rate_limit(cfg, clock):

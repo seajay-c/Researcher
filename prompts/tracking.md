@@ -16,7 +16,7 @@ Status values: `not started`, `green`, `yellow`, `red`, `rolled back`. Put evide
 | 10 | `10-cli.md` | FR-001, 010, 011 | green | live CLI run | Live research has ≥8 sources, resume works, ask answers | Fewer than 8 sources | Live run fails |
 | 11 | `11-gui-read.md` | FR-013, 014, NFR-007, 009 | green | web tests + LAN open | List, links and source page work, opens from the LAN, `/health` returns JSON | Works only from localhost | Path traversal works, or pages error |
 | 12 | `12-gui-live.md` | FR-015, 016, 010, NFR-002 | green | browser run | Live progress, follow-up saved, resume on restart, no LLM overlap | Progress shows only after a reload | Overlapping model calls, or a task is stuck `running` |
-| 13 | `13-e2e-verify.md` | FR-006–008, NFR-001, 005, 006, 008 | not started | pcap + checks | Only the m1max and MCP in the pcap, all checks pass with evidence | A `should` row fails | An unexpected outbound host, or a `must` row fails |
+| 13 | `13-e2e-verify.md` | FR-006–008, NFR-001, 005, 006, 008 | green | pcap + checks | Only the m1max and MCP in the pcap, all checks pass with evidence | A `should` row fails | An unexpected outbound host, or a `must` row fails |
 
 ## Notes
 
@@ -114,3 +114,48 @@ Status values: `not started`, `green`, `yellow`, `red`, `rolled back`. Put evide
   - NFR-002 live: server log over the Zig research + concurrent browser follow-up → 73 model events, max 1 request in flight.
   - Claude-in-Chrome was not connected, so the browser checks used headless Google Chrome 156 driven over the DevTools protocol from a temp script.
 - Derived: `create_app(cfg, llm=None, tools=None)` (injectable for tests). Bus is `publish(event)` keyed by `event["task"]`. Forms are parsed with `urllib.parse.parse_qs` because FastAPI `Form` needs `python-multipart` (not an allowed dependency). A follow-up on a `running` folder returns 409, and one follow-up per folder runs at a time (they share `state.json`). The shared MCP session handled concurrent research + follow-up calls without errors, so no lock was added around `Tools.call`.
+
+### 13
+Went **red twice**; fixed through the red-zone steps (code changes recorded here), then all checks re-run green.
+- Red 1 — NFR-006: `serve` log had uvicorn plain-text lines (`INFO:     Started server process`, access log). Isolated: only the `researcher` logger had the JSON handler. Fix: `log.py` puts the JSON handler on the root logger (quiets httpx/httpx2/httpcore/openai/mcp to WARNING); `serve` runs uvicorn with `log_config=None`; the CLI installs logging first. Test `test_third_party_logs_are_json`.
+- Red 2 — FR-008: GUI run "How does SQLite implement write-ahead logging?" saved 4 sources. Isolated from the log: with thinking off Qwen repeats its last `web_url_read` after each save (3 duplicates → stuck → nudge → one more save → repeat). Fix: `tool_loop` tracks search-result URLs; every `saved as`, duplicate result and nudge lists up to 5 unread result URLs. Test `test_unread_results_hint`. Re-run of the same question → 13 sources.
+
+Evidence (final runs):
+1. `pytest -q` → 50 passed. `tests/smoke_m1max.py` → structured `get_time` tool call with thinking on and off, `SMOKE OK`.
+2. NFR-001: `sudo tcpdump -i any … -w /tmp/researcher-inc13b.pcap` (AppArmor blocks writing the pcap under `$HOME`, so it is in `/tmp` as the SRS command has it) during a GUI research run + follow-up. vm1 runs other software, so the capture also holds their SYNs (gbrain Postgres 100.68.114.6:5432, Claude Code → 160.79.104.10:443, Ubuntu mirrors 91.189.91.x:80, Unraid UI 12.0.0.225:443/8043, …). Attribution: `strace -f -e trace=connect -p <serve pid>` for the whole run → the Researcher process connected only to `100.67.98.112:8080` (4) and `12.0.0.225:3000` (37); the pcap has exactly 4 and 37 SYNs to those two, so every other host in it is another process. A per-process `ss -tnp` poll during the earlier run also showed only those two peers.
+3. FR-006/FR-008: `research/2026-11-17-how-does-sqlite-implement-write-ahead-logging-2` → 13 source files; cited [1]–[12], 0 citations without a file. Other runs: MCP 8, Zig 13 (cited ⊆ files), SearXNG-3 8.
+4. FR-007: follow-up "What new SQLite version will be released on 2027-09-01…" → fresh search + read (new source [13]) and the inference is marked `[unverified]`.
+5. NFR-008: `grep -iE "cannot browse|can't browse|as an ai|I'm unable"` over 4 reports + 2 followups.md (MCP, Zig, SearXNG-2, SearXNG-3) → 0 matches.
+6. NFR-006: `python -c 'import sys,json;[json.loads(l) for l in sys.stdin]' < serve log` → exit 0, 144 lines. NFR-005: `git grep "$M1MAX_API_KEY" $(git rev-list --all)` → 0 commits; working tree → 0; `.env` git-ignored and untracked.
+7. Every source file's header (n, url, title, fetched_at) matches `state.json` and its `NN-<domain>.md` name: 58 files in 7 folders, 0 mismatches (FR-003).
+
+Must-row walk (`srs.md`):
+| ID | Evidence |
+| --- | --- |
+| FR-001 | inc04 test; CLI run → `research/2026-11-16-what-is-searxng-3`; GUI `POST /research` → folder (inc12, inc13) |
+| FR-002 | `mcp_call` log lines for `searxng_web_search` to MCP-Searxng (inc03 live, every run); strace: only MCP + m1max |
+| FR-003 | 58/58 source headers match (step 7); inc04 tests |
+| FR-004 | inc07/08 tests; live resume (inc10 run 2, inc12 kill -9): each page URL fetched once |
+| FR-005 | inc03: live `skipped: robots` for github.com/search/advanced; 2.97 s same-host gap in log; 30 s timeout test |
+| FR-006 | citation script on every live report: 0 citations without a file (inc10, inc12, inc13) |
+| FR-007 | step 4: `[unverified]` + fresh search; inc07 pass-through test |
+| FR-008 | live runs: 8, 8, 13, 13 sources; `MAX_SOURCES` cap test (inc07) |
+| FR-009 | inc07 test; live inc10 run 1 failure lines after 3 failed reads |
+| FR-010 | inc08 tests; CLI Ctrl-C + `resume` (inc10); `kill -9 serve` + restart (inc12) |
+| FR-011 | inc09 tests; live CLI `ask` from saved sources (no fetch); live GUI follow-up that searched and saved [13] |
+| FR-012 | `followups.md` with 2 entries after two GUI follow-ups (inc12) |
+| FR-013 | inc11 test (newest first, status); live index from the m1max |
+| FR-014 | inc11 test; live citation links `/r/<id>/s/n` → 200 |
+| FR-015 | headless Chrome: follow-up form → answer appended, saved (inc12) |
+| FR-016 | headless Chrome: live log lines appended while running, reload on `done` (inc12) |
+| NFR-001 | step 2 (strace + tcpdump) |
+| NFR-002 | inc02 lock test; inc12 app test with two tasks; live log max 1 request in flight across research + follow-up |
+| NFR-003 | inc02 budget test; inc05 ranker test; inc07 trim test; `max_tokens` keeps input + output inside the budget |
+| NFR-004 | inc07 + inc09 tests (bad JSON, unknown tool not executed, error returned) |
+| NFR-005 | step 6 |
+| NFR-006 | step 6 |
+| NFR-007 | inc11: GUI opened from the m1max over LAN and tailnet, no auth |
+
+Should rows: FR-017 holds (request log `thinking` true for plan/synth/follow-up, false for gather; thinking calls use `reasoning_effort=medium`, retry `low` on an empty `length` reply). NFR-008 step 5. NFR-009 `/health` → `{"m1max":true,"mcp":true}` (inc11, inc13).
+
+Final check (implementation guide): build `pip install -e '.[dev]'` OK; `serve` runs; `pytest` 50 passed; smoke OK; tree matches `structure.md` (no extra files); parts and decisions intact — search/scrape only via MCP-Searxng, `state.json` is the only store, m1max called directly behind one lock.

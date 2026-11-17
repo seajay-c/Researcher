@@ -1,0 +1,127 @@
+{
+  "id": "2026-11-17-how-does-sqlite-implement-write-ahead-logging-2",
+  "question": "How does SQLite implement write-ahead logging?",
+  "status": "done",
+  "phase": "done",
+  "created": "2026-11-17T06:58:35.961602Z",
+  "updated": "2026-11-17T07:16:31.242303Z",
+  "plan": [
+    "SQLite WAL mode implementation details how it works",
+    "site:sqlite.org wal index checkpoint",
+    "SQLite write-ahead logging wal-index frame salt commit protocol",
+    "SQLite WAL mode vs rollback journal transaction internals",
+    "SQLite 3.48 3.49 WAL changes new features 2025"
+  ],
+  "queries_done": [
+    "SQLite WAL mode implementation details how it works",
+    "SQLite write-ahead logging wal-index frame salt commit protocol",
+    "SQLite release 2027 new version roadmap"
+  ],
+  "failures": [],
+  "sources": [
+    {
+      "n": 1,
+      "url": "https://www.sqlite.org/wal.html",
+      "url_hash": "d6f43ae05df1743ec9dc47f73aef8701a56fd8d7268a9b4869611af11c6bc10a",
+      "title": "1\\. Overview",
+      "fetched_at": "2026-11-17T06:59:04.811484Z",
+      "file": "sources/01-www.sqlite.org.md"
+    },
+    {
+      "n": 2,
+      "url": "https://www.sqlite.org/walformat.html",
+      "url_hash": "39e549cc2e81b8c598d8ba03c7df1b131f03667059a42c467404239a8258c561",
+      "title": "1\\. Files On Disk",
+      "fetched_at": "2026-11-17T06:59:13.890156Z",
+      "file": "sources/02-www.sqlite.org.md"
+    },
+    {
+      "n": 3,
+      "url": "https://www3.sqlite.org/matrix/wal.html",
+      "url_hash": "55646c4a74415c7e96855bd7c8ecc58d1b3d7cdde45f64305398dadf0900667f",
+      "title": "1\\. Overview",
+      "fetched_at": "2026-11-17T06:59:26.074145Z",
+      "file": "sources/03-www3.sqlite.org.md"
+    },
+    {
+      "n": 4,
+      "url": "https://dev.to/syed_anzar/how-sqlite-wal-mode-actually-works-the-3-files-shared-memory-and-lock-free-reads-1j2l",
+      "url_hash": "7aba7e0ea6d008480ec5c073b3808369c647822c88cc77a4e9a6e8673c4dc510",
+      "title": "DEV Community",
+      "fetched_at": "2026-11-17T06:59:56.118150Z",
+      "file": "sources/04-dev.to.md"
+    },
+    {
+      "n": 5,
+      "url": "https://sqldocs.org/sqlite-write-ahead-logging/",
+      "url_hash": "f6b14cd19c102ac6add6116c3fe989d6e96cf1aa8e223f4c9659f2a8bc9acfbb",
+      "title": "SQLite WAL Mode: How Write-Ahead Logging Works and When to Use It",
+      "fetched_at": "2026-11-17T07:00:13.409427Z",
+      "file": "sources/05-sqldocs.org.md"
+    },
+    {
+      "n": 6,
+      "url": "https://www.negabaro.com/en/blog/rails/sqlite-wal-mode",
+      "url_hash": "4c96b14ae2e35a2378a4136f900fc5f4dce0b5fb08c022e1297e45327124028b",
+      "title": "SQLite WAL Mode Explained — How It Works, Pros and Cons",
+      "fetched_at": "2026-11-17T07:00:43.605113Z",
+      "file": "sources/06-www.negabaro.com.md"
+    },
+    {
+      "n": 7,
+      "url": "https://blog.codercops.com/blog/sqlite-wal-mode-explained-production-settings-2026",
+      "url_hash": "d2651eb05dde6dc170f955d23d17cfc58deb41f07a67d8bfcc7e00f5543b24ae",
+      "title": "SQLite WAL Mode Explained: Settings for Production",
+      "fetched_at": "2026-11-17T07:00:55.924961Z",
+      "file": "sources/07-blog.codercops.com.md"
+    },
+    {
+      "n": 8,
+      "url": "https://systeminternals.dev/sqlite/wal/",
+      "url_hash": "432d7b7b68694e857a1018e45749a440a60533bb6385d37df2da1776b60abd68",
+      "title": "SQLite Write-Ahead Logging",
+      "fetched_at": "2026-11-17T07:01:21.177633Z",
+      "file": "sources/08-systeminternals.dev.md"
+    },
+    {
+      "n": 9,
+      "url": "https://www.sqliteforum.com/p/sqlite-wal-internals-frames-commits",
+      "url_hash": "d7e7c7deecd83c7e79eddbcf91eba515a74e5f0a4ae2aab054cb04b2b5607a41",
+      "title": "SQLite Forum",
+      "fetched_at": "2026-11-17T07:01:35.893567Z",
+      "file": "sources/09-www.sqliteforum.com.md"
+    },
+    {
+      "n": 10,
+      "url": "https://sijinjoseph.com/post/2022-05-10-sqlite-wal-mode-explained/",
+      "url_hash": "1270fd6eed6c1dd3e8a60af5a6608e8dad5ff3314a1f81e849295589ee144aea",
+      "title": "SQLite's WAL mode explained",
+      "fetched_at": "2026-11-17T07:01:50.758220Z",
+      "file": "sources/10-sijinjoseph.com.md"
+    },
+    {
+      "n": 11,
+      "url": "https://patterns.totorojam.com/case-studies/sqlite-wal",
+      "url_hash": "db94f2e2524384514d37f9df42929f5a591197d747deb08103d47b3e35f65f6c",
+      "title": "Case Studies",
+      "fetched_at": "2026-11-17T07:02:03.245837Z",
+      "file": "sources/11-patterns.totorojam.com.md"
+    },
+    {
+      "n": 12,
+      "url": "https://github.com/sqlite/sqlite/blob/master/src/wal.c",
+      "url_hash": "c3fa61a9ba2d92aa8fb65909a6cce004f9d6d2410de6333e3ae61ba9d18262db",
+      "title": "Navigation Menu",
+      "fetched_at": "2026-11-17T07:02:15.615014Z",
+      "file": "sources/12-github.com.md"
+    },
+    {
+      "n": 13,
+      "url": "https://sqlite.org/chronology.html",
+      "url_hash": "dc263faacb28c719bf111c911a3dcd8203196f84027463fea2dea95f10d7a655",
+      "title": "History Of SQLite Releases",
+      "fetched_at": "2026-11-17T07:16:31.238838Z",
+      "file": "sources/13-sqlite.org.md"
+    }
+  ]
+}

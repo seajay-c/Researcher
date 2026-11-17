@@ -86,3 +86,18 @@ def test_save_state_kill_keeps_old(tmp_path, monkeypatch):
     except KeyboardInterrupt:
         pass
     assert store.load_state(f)["plan"] == []
+
+
+def test_third_party_logs_are_json():
+    import io
+    get_logger("x")
+    root_handlers = [h for h in logging.getLogger().handlers if isinstance(h.formatter, JsonFormatter)]
+    assert root_handlers  # SRS-NFR-006: uvicorn/mcp records reach the JSON handler through the root logger
+    buf = io.StringIO()
+    h = logging.StreamHandler(buf); h.setFormatter(JsonFormatter())
+    acc = logging.getLogger("uvicorn.access"); acc.addHandler(h)
+    try:
+        acc.info('%s - "%s %s HTTP/%s" %d', "1.2.3.4:5", "GET", "/", "1.1", 200)
+    finally:
+        acc.removeHandler(h)
+    assert json.loads(buf.getvalue())["event"] == '1.2.3.4:5 - "GET / HTTP/1.1" 200'

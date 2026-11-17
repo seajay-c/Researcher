@@ -334,3 +334,19 @@ async def test_nudge_below_min_sources(cfg):
     assert [e["event"] for e in events].count("nudge") == 1
     nudge_msg = [m for m in llm.calls[3][2] if m["role"] == "user"][-1]["content"]
     assert "Only 1 sources are saved" in nudge_msg and "q1; q2" in nudge_msg
+
+
+async def test_unread_results_hint(cfg):
+    folder = store.new_task(cfg.research_dir, "q")
+    pages = {f"https://r{i}.com/": f"# R{i}\ntext" for i in range(4)}
+    llm = FakeLLM({"plan": ['{"queries": ["q"]}'],
+                   "gather": [[call("searxng_web_search", query="q")], [call("web_url_read", url="https://r0.com/")],
+                              [call("web_url_read", url="https://r0.com/")], "stop"],
+                   "synth": ["r [1]"]})
+    await run_research(folder, llm, FakeTools(pages), cfg)
+    saved_msg = llm.calls[3][2][-1]["content"]
+    dup_msg = llm.calls[4][2][-1]["content"]
+    assert saved_msg.startswith("saved as [1]") and "- https://r1.com/" in saved_msg and "- https://r0.com/" not in saved_msg
+    assert dup_msg.startswith("already saved as [1]") and "- https://r1.com/" in dup_msg
+    nudge = [m for m in llm.calls[5][2] if m["role"] == "user"][-1]["content"]
+    assert "Unread search results" in nudge and "- https://r3.com/" in nudge

@@ -146,6 +146,13 @@ async def tool_loop(folder: Path, state: dict, msgs: list[dict], llm, tools, cfg
     start = len(state["sources"])
     fails = dups = nudges = 0
     seen: dict[str, str] = {}
+    candidates: list[str] = []  # URLs from search results, in order (inc13 finding: point the model at unread ones)
+
+    def unread_hint() -> str:
+        bad = {sig for sig, res in seen.items()}
+        unread = [u for u in candidates if not store.find_source(state, u)
+                  and "web_url_read" + json.dumps({"url": u}, sort_keys=True) not in bad][:5]
+        return ("\nUnread search results you could read next:\n" + "\n".join(f"- {u}" for u in unread)) if unread else ""
 
     def nudge() -> bool:
         """Below min_total, push the model to keep gathering, at most MAX_NUDGES times (SRS-FR-008; inc10 finding)."""
@@ -157,9 +164,9 @@ async def tool_loop(folder: Path, state: dict, msgs: list[dict], llm, tools, cfg
         emit("nudge", count=len(state["sources"]))
         msgs.append({"role": "user", "content": (
             f"Only {len(state['sources'])} sources are saved; the target is {cfg.min_sources}-{cfg.max_sources}. "
-            f"Keep gathering: run searches you have not run yet"
+            f"Keep gathering: read unread pages from your results, or run searches you have not run yet"
             + (f" (for example: {'; '.join(unrun[:3])})" if unrun else " with new angles on the question")
-            + ", then read new pages from the results. Do not re-read saved URLs.")})
+            + ". Do not re-read saved URLs." + unread_hint())})
         return True
 
     for _ in range(max_turns):
@@ -176,6 +183,13 @@ async def tool_loop(folder: Path, state: dict, msgs: list[dict], llm, tools, cfg
             for c in r["tool_calls"]]})
         for c in r["tool_calls"]:
             result, outcome = await _run_call(c, specs, folder, state, tools, cfg, emit, seen)
+            if c["name"] == "searxng_web_search" and outcome == "ok":
+                try:
+                    candidates.extend(r["url"] for r in json.loads(result) if r.get("url") not in candidates)
+                except (json.JSONDecodeError, TypeError, AttributeError):
+                    pass
+            elif c["name"] == "web_url_read" and outcome in ("ok", "dup"):
+                result += unread_hint()
             msgs.append({"role": "tool", "tool_call_id": c["id"], "content": result})
             if outcome != "invalid":
                 store.save_state(folder, state)
