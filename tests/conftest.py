@@ -46,7 +46,7 @@ class FakeLLM:
         self.calls.append((step, thinking, copy.deepcopy(messages)))
         queue = self.script.get(step) or ["done"]
         reply = queue.pop(0) if len(queue) > 1 else queue[0]
-        if isinstance(reply, Exception):
+        if isinstance(reply, BaseException):
             raise reply
         if isinstance(reply, list):
             return {"content": None, "tool_calls": [dict(id=f"c{len(self.calls)}_{i}", **c) for i, c in enumerate(reply)]}

@@ -187,3 +187,58 @@ async def test_empty_synth_fails_not_empty_report(cfg):
     with pytest.raises(RuntimeError, match="no text"):
         await run_research(folder, llm, FakeTools(), cfg)
     assert not (folder / "report.md").exists() and store.load_state(folder)["status"] == "failed"
+
+
+from researcher.agent import resume_all
+
+
+async def test_resume_after_crash_in_gather(cfg):
+    folder = store.new_task(cfg.research_dir, "q")
+    urls = [f"https://s{i}.com/" for i in range(5)]
+    tools = FakeTools()
+    llm1 = FakeLLM({"plan": ['{"queries": ["q1", "q2"]}'],
+                    "gather": [[call("web_url_read", url=u)] for u in urls[:3]] + [RuntimeError("killed"), RuntimeError("killed")]})
+    with pytest.raises(RuntimeError):
+        await run_research(folder, llm1, tools, cfg)
+    s = store.load_state(folder)
+    assert (s["phase"], len(s["sources"])) == ("gather", 3)
+    llm2 = FakeLLM({"gather": [[call("web_url_read", url=urls[0])], [call("web_url_read", url=urls[3])], "enough"],
+                    "synth": ["r [1][4]"]})
+    await run_research(folder, llm2, tools, cfg)  # SRS-FR-010
+    assert tools.reads == urls[:4]  # no second read of the first 3 (SRS-FR-004)
+    assert "plan" not in [st for st, _, _ in llm2.calls]  # plan not regenerated
+    seed = llm2.calls[0][2][-1]["content"]
+    assert "resuming" in seed and "[3] Page https://s2.com/" in seed
+    s = store.load_state(folder)
+    assert (s["status"], s["plan"], [x["n"] for x in s["sources"]]) == ("done", ["q1", "q2"], [1, 2, 3, 4])
+    assert (folder / "report.md").exists()
+
+
+async def test_resume_synthesize_no_tools(cfg):
+    folder = store.new_task(cfg.research_dir, "q")
+    s = store.load_state(folder)
+    store.add_source(folder, s, "https://a.com/1", "A", "text")
+    s["phase"] = "synthesize"; store.save_state(folder, s)
+    tools = FakeTools()
+    llm = FakeLLM({"synth": ["r [1]"]})
+    await run_research(folder, llm, tools, cfg)
+    assert tools.reads == [] and tools.searches == [] and [st for st, _, _ in llm.calls] == ["synth"]
+
+
+async def test_resume_all_and_done_noop(cfg):
+    a = store.new_task(cfg.research_dir, "a")
+    b = store.new_task(cfg.research_dir, "b")
+    sb = store.load_state(b); sb["status"] = sb["phase"] = "done"; store.save_state(b, sb)
+    llm = FakeLLM({"plan": ['{"queries": ["q"]}'], "gather": ["stop"], "synth": ["r"]})
+    assert await resume_all(cfg.research_dir, llm, FakeTools(), cfg) == [a.name]
+    n = len(llm.calls)
+    await run_research(b, llm, FakeTools(), cfg)
+    assert len(llm.calls) == n
+
+
+async def test_kill_leaves_task_running_for_resume(cfg):
+    folder = store.new_task(cfg.research_dir, "q")
+    llm = FakeLLM({"plan": ['{"queries": ["q"]}'], "gather": [[call("web_url_read", url="https://a.com/1")], asyncio.CancelledError(), asyncio.CancelledError()]})
+    with pytest.raises(asyncio.CancelledError):
+        await run_research(folder, llm, FakeTools(PAGES), cfg)
+    assert store.load_state(folder)["status"] == "running" and store.unfinished(cfg.research_dir) == [folder]

@@ -11,7 +11,7 @@ Status values: `not started`, `green`, `yellow`, `red`, `rolled back`. Put evide
 | 05 | `05-ranker.md` | NFR-003 | green | budget test | Under budget and the relevant chunk is kept | Under budget but the relevant chunk is dropped | Over budget |
 | 06 | `06-qwen-prompts.md` | FR-006, 007, 009, 017, NFR-008 | green | prompt checks | 4 prompts, placeholders and few-shot present, grep is clean | A placeholder is missing | A prompt says it can't browse or asks for disclaimers |
 | 07 | `07-research-loop.md` | FR-002–004, 006–009, 017, NFR-004 | green | fake-run tests | Citations match files, retries and failure line, bad JSON not executed, no refetch | Report written but a citation is stripped as bad | `BudgetExceeded`, an invalid call is executed, or a citation has no file |
-| 08 | `08-resume.md` | FR-010, FR-004 | not started | kill/resume test | Resume finishes with no refetch and no replanning | Finishes but replans | Duplicate sources or unreadable `state.json` |
+| 08 | `08-resume.md` | FR-010, FR-004 | green | kill/resume test | Resume finishes with no refetch and no replanning | Finishes but replans | Duplicate sources or unreadable `state.json` |
 | 09 | `09-followup.md` | FR-011, FR-012, NFR-004 | not started | follow-up tests | Covered question makes no fetch, uncovered one adds the next source, `followups.md` has 2 entries | Answers but adds a needless fetch | New source lands outside the folder, or numbering collides |
 | 10 | `10-cli.md` | FR-001, 010, 011 | not started | live CLI run | Live research has ≥8 sources, resume works, ask answers | Fewer than 8 sources | Live run fails |
 | 11 | `11-gui-read.md` | FR-013, 014, NFR-007, 009 | not started | web tests + LAN open | List, links and source page work, opens from the LAN, `/health` returns JSON | Works only from localhost | Path traversal works, or pages error |
@@ -71,3 +71,10 @@ Status values: `not started`, `green`, `yellow`, `red`, `rolled back`. Put evide
 - Isolation run 2: loop fix confirmed (6 saved, 3 duplicates, `stuck`, 13 model calls vs 42). Synth did not finish inside 25 min: the m1max was shared with other clients (engine ~3 tok/s per request) and the OpenAI SDK's default 600 s timeout + 2 retries silently re-sent the request (engine log showed two copies decoding). Fix in `llm.py` (bug fix): `timeout=1800` (gateway `REQUEST_TIMEOUT_S`), `max_retries=0`. Empty synth text now raises → `status=failed` instead of writing an empty report.
 - Not yet confirmed live: a full synth on the real model. Covered by inc10's live run.
 - Derived: `tool_loop(...)` is the shared model↔tool helper (inc09 reuses it). `fill(name, **values)` fills placeholders with `str.replace`.
+
+### 08
+- `pytest -q` → 31 passed. Crash after 3 saved sources, then `run_research` again: reads are exactly the 3 old URLs + 1 new (the model's re-read of `[1]` returns `already saved`), no `plan` call, plan kept, numbering 1–4 with no gaps, report written (FR-010, FR-004). The resume seed lists `queries_done` and `[n] title — url`.
+- `phase="synthesize"` → only the synth call, no tool calls. `phase="done"` → returns at once. `resume_all` runs only `running` folders, one at a time.
+- A kill (`CancelledError`/`KeyboardInterrupt`) leaves `status=running`, so `unfinished` and `resume_all` pick it up. An `Exception` sets `failed`; running `run_research` on that folder again resets it to `running` and continues from its phase.
+- Isolation test (kill between temp write and `os.replace`): `test_save_state_kill_keeps_old` → previous `state.json` loads.
+- `phase="synthesize"` is saved before the synthesizer runs.

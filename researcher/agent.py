@@ -179,14 +179,24 @@ async def _plan(folder: Path, state: dict, llm, emit) -> None:
     emit("plan", queries=state["plan"])
 
 
-async def _gather(folder: Path, state: dict, llm, tools, cfg: Config, emit) -> None:
+async def _gather(folder: Path, state: dict, llm, tools, cfg: Config, emit, resuming: bool = False) -> None:
     emit("phase", phase="gather")
+    remaining = cfg.max_sources - len(state["sources"])
+    if remaining <= 0:
+        return
     plan = "\n".join(f"- {q}" for q in state["plan"])
     msgs = [{"role": "system", "content": fill("executor", question=state["question"], plan=plan,
                                                min_sources=cfg.min_sources, max_sources=cfg.max_sources)},
             {"role": "user", "content": state["question"]}]
+    if resuming:  # SRS-FR-010: continue from the checkpoint instead of starting over
+        done = "\n".join(f"- {q}" for q in state["queries_done"]) or "- (none)"
+        saved = "\n".join(f"[{s['n']}] {s['title']} — {s['url']}" for s in state["sources"]) or "(none)"
+        msgs.append({"role": "user", "content": (
+            f"This task was interrupted and is resuming. Searches already run:\n{done}\n\n"
+            f"Sources already saved (do not read these again):\n{saved}\n\n"
+            f"Continue gathering until {cfg.min_sources}-{cfg.max_sources} sources are saved ({_progress(state, cfg)}).")})
     await tool_loop(folder, state, msgs, llm, tools, cfg, emit, thinking=False, max_turns=MAX_GATHER_TURNS,
-                    max_new=cfg.max_sources - len(state["sources"]), step="gather")
+                    max_new=remaining, step="gather")
 
 
 async def _synthesize(folder: Path, state: dict, llm, cfg: Config, emit) -> None:
@@ -208,10 +218,22 @@ async def _synthesize(folder: Path, state: dict, llm, cfg: Config, emit) -> None
 
 async def run_research(folder: Path, llm, tools, cfg: Config, on_event=None) -> None:
     state = store.load_state(folder)
+    if state["phase"] == "done":
+        return
     emit = _emitter(state, on_event)
+    start_phase = state["phase"]
+    if state["status"] != "running":
+        state["status"] = "running"
+        store.save_state(folder, state)
+    if start_phase != "plan":
+        emit("resume", phase=start_phase, sources=len(state["sources"]))
     try:
-        await _plan(folder, state, llm, emit)
-        await _gather(folder, state, llm, tools, cfg, emit)
+        if start_phase == "plan":
+            await _plan(folder, state, llm, emit)
+        if start_phase in ("plan", "gather"):
+            await _gather(folder, state, llm, tools, cfg, emit, resuming=start_phase == "gather")
+            state["phase"] = "synthesize"
+            store.save_state(folder, state)
         await _synthesize(folder, state, llm, cfg, emit)
     except Exception as e:
         state["status"] = "failed"
@@ -220,3 +242,11 @@ async def run_research(folder: Path, llm, tools, cfg: Config, on_event=None) -> 
         if on_event:
             on_event({"event": "failed", "task": state["id"], "error": str(e)})
         raise
+
+
+async def resume_all(root: Path, llm, tools, cfg: Config, on_event=None) -> list[str]:
+    ids = []
+    for folder in store.unfinished(root):  # one at a time
+        await run_research(folder, llm, tools, cfg, on_event)
+        ids.append(folder.name)
+    return ids
