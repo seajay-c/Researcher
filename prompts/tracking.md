@@ -7,7 +7,7 @@ Status values: `not started`, `green`, `yellow`, `red`, `rolled back`. Put evide
 | 01 | `01-skeleton.md` | stack, NFR-005, NFR-006 | green | install + config test | pip install OK, `--help` lists 4 subcommands, config/log test passes | Installs, but a test is skipped | Install fails or a key is found in git |
 | 02 | `02-llm-client.md` | NFR-002, NFR-003, FR-017, NFR-001 | green | smoke tool call | Structured `tool_calls` from the m1max, lock test has no overlap, budget test raises | Tool call works but the thinking toggle is ignored | Tool call comes back as text in `content`, or the m1max is unreachable |
 | 03 | `03-mcp-tools.md` | FR-002, FR-005, NFR-001 | green | live search + read | Live search and read work, robots/rate/timeout tests pass | Unit tests pass, but MCP is not yet reachable from the LAN | Direct fetch used, or robots blocks every URL |
-| 04 | `04-store.md` | FR-001, 003, 004, 006, 012, 013 | not started | store tests | All store tests pass | — | Any store test fails, or a write lands outside `RESEARCH_DIR` |
+| 04 | `04-store.md` | FR-001, 003, 004, 006, 012, 013 | green | store tests | All store tests pass | — | Any store test fails, or a write lands outside `RESEARCH_DIR` |
 | 05 | `05-ranker.md` | NFR-003 | not started | budget test | Under budget and the relevant chunk is kept | Under budget but the relevant chunk is dropped | Over budget |
 | 06 | `06-qwen-prompts.md` | FR-006, 007, 009, 017, NFR-008 | not started | prompt checks | 4 prompts, placeholders and few-shot present, grep is clean | A placeholder is missing | A prompt says it can't browse or asks for disclaimers |
 | 07 | `07-research-loop.md` | FR-002–004, 006–009, 017, NFR-004 | not started | fake-run tests | Citations match files, retries and failure line, bad JSON not executed, no refetch | Report written but a citation is stripped as bad | `BudgetExceeded`, an invalid call is executed, or a citation has no file |
@@ -45,3 +45,9 @@ Status values: `not started`, `green`, `yellow`, `red`, `rolled back`. Put evide
 - Derived deviations: mcp 2.3.0 renamed `streamablehttp_client` → `streamable_http_client` (yields 2 streams) and uses snake_case (`input_schema`, `is_error`). Log field is `tool_args`, not `args` (`args` is reserved on `LogRecord`). Added a per-host `asyncio.Lock` so the 2 s gap holds across concurrent tasks (needed for inc12). `search` takes an optional `task` kwarg for logging.
 - Known limit (shortcut comment in code): stdlib `RobotFileParser` ignores `*`/`$` wildcards, so wildcard-only rules (e.g. GitHub `Disallow: /search$`) are not enforced.
 - Seen once at session close: mcp library logs `Error parsing SSE message ... BrokenResourceError` during teardown after a large response; results were already returned. Not a failure; watch for it in inc12.
+
+### 04
+- `pytest tests/test_store.py -q` → 7 passed (all 15 in the suite): new_task folder + `-2` suffix (FR-001), sources numbered 1,2,3 with `n/url/title/fetched_at` headers (FR-003), `find_source` hit and `add_source` dedupe (FR-004), report ends with `[n] title — url` list matching `state["sources"]` (FR-006), two follow-up entries (FR-012), `list_tasks` newest first and `unfinished` (FR-013).
+- Atomic write check (also the inc08 isolation test): `os.replace` raising mid-save leaves the previous `state.json` readable.
+- Writes stay inside `RESEARCH_DIR`: folder names come from `slugify` (only `[a-z0-9-]`), source names from a sanitized netloc.
+- Added helper `slugify` (public) and `add_source` returns the existing number on a duplicate URL.
