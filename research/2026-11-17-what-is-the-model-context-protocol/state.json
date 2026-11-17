@@ -1,0 +1,87 @@
+{
+  "id": "2026-11-17-what-is-the-model-context-protocol",
+  "question": "What is the Model Context Protocol?",
+  "status": "done",
+  "phase": "done",
+  "created": "2026-11-17T06:06:03.170513Z",
+  "updated": "2026-11-17T06:17:59.082373Z",
+  "plan": [
+    "Model Context Protocol what is it",
+    "site:modelcontextprotocol.io documentation",
+    "Model Context Protocol Anthropic announcement 2024",
+    "MCP Model Context Protocol architecture tools servers",
+    "Model Context Protocol ecosystem 2025 update",
+    "MCP vs function calling LLM context protocol comparison"
+  ],
+  "queries_done": [
+    "Model Context Protocol what is it",
+    "Model Context Protocol MCP specification site:modelcontextprotocol.io"
+  ],
+  "failures": [],
+  "sources": [
+    {
+      "n": 1,
+      "url": "https://www.anthropic.com/news/model-context-protocol",
+      "url_hash": "e283b9c34207eff8e62a1618cc1a5bc63348e8c9e67ea2af1dda80b41b6b3d9b",
+      "title": "Introducing the Model Context Protocol",
+      "fetched_at": "2026-11-17T06:06:58.221973Z",
+      "file": "sources/01-www.anthropic.com.md"
+    },
+    {
+      "n": 2,
+      "url": "https://modelcontextprotocol.io/docs/2026-07-28/getting-started/intro",
+      "url_hash": "d2ee308c23dc4fe3ef0b0f1d1a437b4a66f87a8ac4bd16b913789a526d762b79",
+      "title": "Get started",
+      "fetched_at": "2026-11-17T06:07:09.059054Z",
+      "file": "sources/02-modelcontextprotocol.io.md"
+    },
+    {
+      "n": 3,
+      "url": "https://modelcontextprotocol.io/docs/2026-07-28/learn/architecture",
+      "url_hash": "ce5cb1d1334010e63a4c54bccabf30bf2ed6e6e1881f8291c18cf902881a2586",
+      "title": "Get started",
+      "fetched_at": "2026-11-17T06:07:19.216244Z",
+      "file": "sources/03-modelcontextprotocol.io.md"
+    },
+    {
+      "n": 4,
+      "url": "https://en.wikipedia.org/wiki/Model_Context_Protocol",
+      "url_hash": "fb21ebc8d2bf5e91fafd364efd232d9583ba437b2254696508285e96a011af09",
+      "title": "Contents",
+      "fetched_at": "2026-11-17T06:07:30.700445Z",
+      "file": "sources/04-en.wikipedia.org.md"
+    },
+    {
+      "n": 5,
+      "url": "https://modelcontextprotocol.io/specification/2026-07-28",
+      "url_hash": "d1aed5d46f787fd036cd68b4bdbde4adc04fe0b9f0f2c2aa6d80d6b1f5d17835",
+      "title": "Base Protocol",
+      "fetched_at": "2026-11-17T06:08:02.879490Z",
+      "file": "sources/05-modelcontextprotocol.io.md"
+    },
+    {
+      "n": 6,
+      "url": "https://blog.modelcontextprotocol.io/posts/2026-07-28/",
+      "url_hash": "3bef6a91327c3092c6e78e6ed832823df3c7e8619728d00439a68e14cb5923c4",
+      "title": "The 2026-07-28 Specification",
+      "fetched_at": "2026-11-17T06:08:15.025008Z",
+      "file": "sources/06-blog.modelcontextprotocol.io.md"
+    },
+    {
+      "n": 7,
+      "url": "https://blog.modelcontextprotocol.io/posts/2025-11-25-first-mcp-anniversary/",
+      "url_hash": "47841e3b86684e64cf8d34db6100a195ba0e5137338136484221bf4cf72b9951",
+      "title": "One Year of MCP: November 2025 Spec Release",
+      "fetched_at": "2026-11-17T06:08:25.149476Z",
+      "file": "sources/07-blog.modelcontextprotocol.io.md"
+    },
+    {
+      "n": 8,
+      "url": "https://github.com/modelcontextprotocol/modelcontextprotocol",
+      "url_hash": "1f9a6ffe7d318ba329370a2c250ca0b7d030bc072598378d77f1388cc996cb64",
+      "title": "Navigation Menu",
+      "fetched_at": "2026-11-17T06:08:36.754785Z",
+      "file": "sources/08-github.com.md"
+    }
+  ]
+}

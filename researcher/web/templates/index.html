@@ -1,6 +1,14 @@
 {% extends "base.html" %}
 {% block content %}
 <h1>Research</h1>
+<form method="post" action="/research" id="start">
+  <label for="question" class="muted">New research question</label>
+  <textarea id="question" name="question" rows="2" required placeholder="What do you want to know?"></textarea>
+  <p><button type="submit">Start research</button></p>
+</form>
+<script>
+  document.getElementById("start").addEventListener("submit", e => e.target.querySelector("button").disabled = true);
+</script>
 {% if tasks %}
 <ul class="tasks">
 {% for t in tasks %}

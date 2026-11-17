@@ -1,0 +1,127 @@
+{
+  "id": "2026-11-17-what-is-the-zig-programming-language",
+  "question": "What is the Zig programming language?",
+  "status": "done",
+  "phase": "done",
+  "created": "2026-11-17T06:25:16.158482Z",
+  "updated": "2026-11-17T06:42:45.942941Z",
+  "plan": [
+    "Zig programming language official website",
+    "Zig programming language features philosophy design",
+    "Zig 0.14 release 2025 news",
+    "Zig vs C vs Rust comparison systems programming",
+    "Andrew Kelley Zig language creator history"
+  ],
+  "queries_done": [
+    "Zig programming language official website"
+  ],
+  "failures": [
+    "gather: 3 tool calls failed in a row; last error: Error: web_url_read error: 🚫 Website Error (404): Page not found"
+  ],
+  "sources": [
+    {
+      "n": 1,
+      "url": "https://ziglang.org/",
+      "url_hash": "31fb4c7d9ab7e6eff8199f6b62bb1677f7b2cd1a4f5b73d23479e32abfa3e2fb",
+      "title": "⚡ A Simple Language",
+      "fetched_at": "2026-11-17T06:26:12.220412Z",
+      "file": "sources/01-ziglang.org.md"
+    },
+    {
+      "n": 2,
+      "url": "https://ziglang.org/learn/overview/",
+      "url_hash": "d1a48a3bf1691b575ba100186209be32bfbc46a8681ca0df6e3887608406e508",
+      "title": "Overview",
+      "fetched_at": "2026-11-17T06:26:20.666616Z",
+      "file": "sources/02-ziglang.org.md"
+    },
+    {
+      "n": 3,
+      "url": "https://en.wikipedia.org/wiki/Zig_(programming_language)",
+      "url_hash": "70bc457c42df3952cbcc5b5ffa77d4974be87aedf2382916380644f97c204937",
+      "title": "Contents",
+      "fetched_at": "2026-11-17T06:26:30.828060Z",
+      "file": "sources/03-en.wikipedia.org.md"
+    },
+    {
+      "n": 4,
+      "url": "https://codeberg.org/ziglang/zig",
+      "url_hash": "2fca1feb54c63390b81923a222269e05e4207e916fb38e808fc2ad0ef0d9d629",
+      "title": "**README.md**",
+      "fetched_at": "2026-11-17T06:26:54.369287Z",
+      "file": "sources/04-codeberg.org.md"
+    },
+    {
+      "n": 5,
+      "url": "https://ziglang.org/news/",
+      "url_hash": "0e1543f453df6f7317dd6f37508ab3b5d343500b817540eb8df6ad2f832a8fbe",
+      "title": "News",
+      "fetched_at": "2026-11-17T06:27:04.615556Z",
+      "file": "sources/05-ziglang.org.md"
+    },
+    {
+      "n": 6,
+      "url": "https://ziglang.org/news/0.14.0-delayed/",
+      "url_hash": "9de92106fa240f34fa1a27850a1cc9d0c234d7d9692406eedd04aa04466d681e",
+      "title": "Good News! 0.14.0 Delayed",
+      "fetched_at": "2026-11-17T06:27:14.904716Z",
+      "file": "sources/06-ziglang.org.md"
+    },
+    {
+      "n": 7,
+      "url": "https://ziglang.org/news/0.16.0-released/",
+      "url_hash": "ad2179e9fec3c5ec3d1500b7bc020927fa7e384874763ab6cc3a0b0636275572",
+      "title": "0.16.0 Released",
+      "fetched_at": "2026-11-17T06:27:24.130508Z",
+      "file": "sources/07-ziglang.org.md"
+    },
+    {
+      "n": 8,
+      "url": "https://ziglang.org/zsf/",
+      "url_hash": "a0f202bdbe235a73f5023a27ba28c654c0c3d456eac18c8fd2595a79c4621055",
+      "title": "Zig Software Foundation",
+      "fetched_at": "2026-11-17T06:27:30.946871Z",
+      "file": "sources/08-ziglang.org.md"
+    },
+    {
+      "n": 9,
+      "url": "https://ziglang.org/intro/",
+      "url_hash": "d1a17c667529588cc75e575291e375a0eeeb1954a0d31309edca44d5c50954e5",
+      "title": "Introduction",
+      "fetched_at": "2026-11-17T06:27:39.342814Z",
+      "file": "sources/09-ziglang.org.md"
+    },
+    {
+      "n": 10,
+      "url": "https://ziglang.org/intro/why%5Fzig%5Frust%5Fd%5Fcpp/",
+      "url_hash": "dde0540444d984ce65669512ec4a9766b3b967f44190cad250dcc3e0c4451ff4",
+      "title": "Why Zig When There is Already C++, D, and Rust?",
+      "fetched_at": "2026-11-17T06:27:49.158069Z",
+      "file": "sources/10-ziglang.org.md"
+    },
+    {
+      "n": 11,
+      "url": "https://ziglang.org/intro/getting-started/",
+      "url_hash": "b9ab14753c92bd6535099165b456d9feac05b3aff84fa0774a6538b374e2f128",
+      "title": "Getting Started",
+      "fetched_at": "2026-11-17T06:27:58.124238Z",
+      "file": "sources/11-ziglang.org.md"
+    },
+    {
+      "n": 12,
+      "url": "https://ziglang.org/community",
+      "url_hash": "c7622550bbf2d074ef222a73f6cb7e0bca8eed08faa1344f623f3ad2e184ba4e",
+      "title": "Community",
+      "fetched_at": "2026-11-17T06:28:07.536627Z",
+      "file": "sources/12-ziglang.org.md"
+    },
+    {
+      "n": 13,
+      "url": "https://ziglang.org/download/0.16.0/release-notes.html",
+      "url_hash": "ec86cbf09149398292c6f413685fc91fdda289620eeda3687bdb156752b6917d",
+      "title": "0.16.0 Release Notes",
+      "fetched_at": "2026-11-17T06:28:18.356653Z",
+      "file": "sources/13-ziglang.org.md"
+    }
+  ]
+}

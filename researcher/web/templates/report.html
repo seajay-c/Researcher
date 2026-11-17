@@ -2,14 +2,58 @@
 {% block title %}{{ state.question }} · Researcher{% endblock %}
 {% block content %}
 <h1>{{ state.question }}</h1>
-<p><span class="chip {{ state.status }}">{{ state.status }}</span> <span class="muted">phase {{ state.phase }} · {{ state.sources | length }} sources</span></p>
+<p><span class="chip {{ state.status }}" id="status">{{ state.status }}</span> <span class="muted">phase {{ state.phase }} · {{ state.sources | length }} sources</span></p>
+{% if state.status == "running" %}
+<h2>Progress</h2>
+<div id="log" aria-live="polite"></div>
+<script>
+  // SRS-FR-016: live progress over SSE; reload when the task ends
+  const log = document.getElementById("log");
+  const line = e => {
+    const bits = [e.phase, e.query, e.url, e.n !== undefined ? "[" + e.n + "]" : "", e.error, e.reason].filter(Boolean);
+    return new Date().toLocaleTimeString() + "  " + e.event + (bits.length ? "  " + bits.join("  ") : "");
+  };
+  const es = new EventSource("/r/{{ state.id }}/events");
+  es.onmessage = m => {
+    const e = JSON.parse(m.data);
+    log.textContent += line(e) + "\n";
+    log.scrollTop = log.scrollHeight;
+    if (e.event === "done" || e.event === "failed") { es.close(); setTimeout(() => location.reload(), 800); }
+  };
+</script>
+{% endif %}
 {% if report_html %}
 <article class="doc">{{ report_html | safe }}</article>
-{% else %}
+{% elif state.status != "running" %}
 <p class="muted">No report yet. Status: {{ state.status }}, phase: {{ state.phase }}.</p>
 {% endif %}
 <section id="followups">
 <h2>Follow-ups</h2>
-<div class="doc">{{ followups_html | safe }}</div>
+<div class="doc" id="fu">{{ followups_html | safe }}</div>
+{% if state.status != "running" %}
+<form id="ask">
+  <label for="q" class="muted">Ask a follow-up about this report</label>
+  <textarea id="q" rows="2" required></textarea>
+  <p><button type="submit">Ask</button> <span class="muted" id="askstate"></span></p>
+</form>
+<script>
+  // SRS-FR-015: send the follow-up, then append the question and the cited answer
+  const form = document.getElementById("ask"), q = document.getElementById("q"), st = document.getElementById("askstate");
+  form.addEventListener("submit", async ev => {
+    ev.preventDefault();
+    const btn = form.querySelector("button"); btn.disabled = true; st.textContent = "thinking… (this can take a few minutes)";
+    try {
+      const r = await fetch("/r/{{ state.id }}/ask", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({question: q.value})});
+      const data = await r.json();
+      if (!r.ok) throw new Error(data.error || data.detail || r.status);
+      const h = document.createElement("h2"); h.textContent = "Q: " + data.question;
+      const a = document.createElement("div"); a.innerHTML = data.answer_html;
+      document.getElementById("fu").append(h, a);
+      q.value = ""; st.textContent = "";
+    } catch (e) { st.textContent = "failed: " + e.message; }
+    btn.disabled = false;
+  });
+</script>
+{% endif %}
 </section>
 {% endblock %}

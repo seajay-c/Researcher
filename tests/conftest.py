@@ -73,3 +73,12 @@ class FakeTools:
         if url in self.fail_urls:
             raise ToolError(f"web_url_read error: Website Error (404) for {url}")
         return self.pages.get(url, f"# Page {url}\nSome text about {url}.")
+
+
+@pytest.fixture(autouse=True)
+def fresh_llm_lock(monkeypatch):
+    # asyncio.Lock binds to the first loop that contends for it; tests run several loops (pytest-asyncio, TestClient),
+    # production runs one. Give each test its own lock.
+    import asyncio
+    from researcher import llm
+    monkeypatch.setattr(llm, "_LOCK", asyncio.Lock())

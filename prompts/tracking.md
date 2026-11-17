@@ -15,7 +15,7 @@ Status values: `not started`, `green`, `yellow`, `red`, `rolled back`. Put evide
 | 09 | `09-followup.md` | FR-011, FR-012, NFR-004 | green | follow-up tests | Covered question makes no fetch, uncovered one adds the next source, `followups.md` has 2 entries | Answers but adds a needless fetch | New source lands outside the folder, or numbering collides |
 | 10 | `10-cli.md` | FR-001, 010, 011 | green | live CLI run | Live research has ≥8 sources, resume works, ask answers | Fewer than 8 sources | Live run fails |
 | 11 | `11-gui-read.md` | FR-013, 014, NFR-007, 009 | green | web tests + LAN open | List, links and source page work, opens from the LAN, `/health` returns JSON | Works only from localhost | Path traversal works, or pages error |
-| 12 | `12-gui-live.md` | FR-015, 016, 010, NFR-002 | not started | browser run | Live progress, follow-up saved, resume on restart, no LLM overlap | Progress shows only after a reload | Overlapping model calls, or a task is stuck `running` |
+| 12 | `12-gui-live.md` | FR-015, 016, 010, NFR-002 | green | browser run | Live progress, follow-up saved, resume on restart, no LLM overlap | Progress shows only after a reload | Overlapping model calls, or a task is stuck `running` |
 | 13 | `13-e2e-verify.md` | FR-006–008, NFR-001, 005, 006, 008 | not started | pcap + checks | Only the m1max and MCP in the pcap, all checks pass with evidence | A `should` row fails | An unexpected outbound host, or a `must` row fails |
 
 ## Notes
@@ -102,3 +102,15 @@ Status values: `not started`, `green`, `yellow`, `red`, `rolled back`. Put evide
 - Live: `python -m researcher serve` on `0.0.0.0:8090`. From the m1max (another LAN machine): `GET http://12.0.0.179:8090/` → 200, `/health` → `{"m1max":true,"mcp":true}`; tailnet `http://100.100.88.116:8090/` → 200 (NFR-007, NFR-009). Report `-3` has citation links `/s/1`… and `/s/2` → 200.
 - Task ids with `/`, `\` or `..` are rejected, and the resolved folder must sit directly in `RESEARCH_DIR` with a `state.json`. Source pages link the original URL only for `http(s)` URLs.
 - Note: a bare `/r/..` is normalized to `/` by HTTP clients before it is sent, so it shows the index page; it never reaches the route.
+
+### 12
+- `pytest -q` → 48 passed (3 runs in a row). New web tests: `POST /research` → 303 + folder (FR-001); SSE replay ends with `done` and the report renders; SSE opened while running streams to `done` (FR-016); `POST /r/<id>/ask` → `answer_html` with citation links + `followups.md` entry, 400 on empty question (FR-015); two tasks at once through the app with the real `LLM` class and a recording fake client → both `done`, ≥6 calls, no overlapping intervals (NFR-002); a `running`/`synthesize` folder resumes on app start with no tool calls (FR-010); MCP down at startup → browsing works, start returns 503.
+- Found while testing: the module-level `asyncio.Lock` raised "bound to a different event loop" when tests ran several loops (pytest-asyncio + TestClient). Production runs one loop (uvicorn or one `asyncio.run`), so the fix is test-only: an autouse fixture gives each test a fresh lock. The concurrency test now also asserts both tasks end `done`.
+- Live (real m1max + MCP, `serve` on 0.0.0.0:8090):
+  - `POST /research` "What is the Model Context Protocol?" → SSE received live with receive timestamps 06:06:03 → 06:07:19 plus keepalives (FR-016).
+  - `kill -9` serve in gather (state: running/gather/4 sources) → restart `serve` → log `resume` at gather, no plan call → done with 8 sources; each page URL fetched once across both server processes (FR-010, FR-004).
+  - Follow-up via `POST /r/<id>/ask` → cited answer HTML; then via the report page form in headless Chrome (CDP) → answer appended under the first one with `[8]`; `followups.md` has 2 entries (FR-015).
+  - Headless Chrome on the running Zig task: the page's EventSource JS replayed stored events and appended new ones live (12:27:57 → 12:28:31); left open, it reloaded on `done` into the report (`status done`, 94 citation links). Zig report: 13 sources, every `[n]` has a file.
+  - NFR-002 live: server log over the Zig research + concurrent browser follow-up → 73 model events, max 1 request in flight.
+  - Claude-in-Chrome was not connected, so the browser checks used headless Google Chrome 156 driven over the DevTools protocol from a temp script.
+- Derived: `create_app(cfg, llm=None, tools=None)` (injectable for tests). Bus is `publish(event)` keyed by `event["task"]`. Forms are parsed with `urllib.parse.parse_qs` because FastAPI `Form` needs `python-multipart` (not an allowed dependency). A follow-up on a `running` folder returns 409, and one follow-up per folder runs at a time (they share `state.json`). The shared MCP session handled concurrent research + follow-up calls without errors, so no lock was added around `Tools.call`.
