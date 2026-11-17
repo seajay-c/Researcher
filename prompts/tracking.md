@@ -8,7 +8,7 @@ Status values: `not started`, `green`, `yellow`, `red`, `rolled back`. Put evide
 | 02 | `02-llm-client.md` | NFR-002, NFR-003, FR-017, NFR-001 | green | smoke tool call | Structured `tool_calls` from the m1max, lock test has no overlap, budget test raises | Tool call works but the thinking toggle is ignored | Tool call comes back as text in `content`, or the m1max is unreachable |
 | 03 | `03-mcp-tools.md` | FR-002, FR-005, NFR-001 | green | live search + read | Live search and read work, robots/rate/timeout tests pass | Unit tests pass, but MCP is not yet reachable from the LAN | Direct fetch used, or robots blocks every URL |
 | 04 | `04-store.md` | FR-001, 003, 004, 006, 012, 013 | green | store tests | All store tests pass | — | Any store test fails, or a write lands outside `RESEARCH_DIR` |
-| 05 | `05-ranker.md` | NFR-003 | not started | budget test | Under budget and the relevant chunk is kept | Under budget but the relevant chunk is dropped | Over budget |
+| 05 | `05-ranker.md` | NFR-003 | green | budget test | Under budget and the relevant chunk is kept | Under budget but the relevant chunk is dropped | Over budget |
 | 06 | `06-qwen-prompts.md` | FR-006, 007, 009, 017, NFR-008 | not started | prompt checks | 4 prompts, placeholders and few-shot present, grep is clean | A placeholder is missing | A prompt says it can't browse or asks for disclaimers |
 | 07 | `07-research-loop.md` | FR-002–004, 006–009, 017, NFR-004 | not started | fake-run tests | Citations match files, retries and failure line, bad JSON not executed, no refetch | Report written but a citation is stripped as bad | `BudgetExceeded`, an invalid call is executed, or a citation has no file |
 | 08 | `08-resume.md` | FR-010, FR-004 | not started | kill/resume test | Resume finishes with no refetch and no replanning | Finishes but replans | Duplicate sources or unreadable `state.json` |
@@ -51,3 +51,7 @@ Status values: `not started`, `green`, `yellow`, `red`, `rolled back`. Put evide
 - Atomic write check (also the inc08 isolation test): `os.replace` raising mid-save leaves the previous `state.json` readable.
 - Writes stay inside `RESEARCH_DIR`: folder names come from `slugify` (only `[a-z0-9-]`), source names from a sanitized netloc.
 - Added helper `slugify` (public) and `add_source` returns the existing number on a duplicate URL.
+
+### 05
+- `pytest tests/test_rank.py -q` → 2 passed: 20 sources × 50K chars, budget 8000 → estimated tokens ≤ 8000, the chunk holding the question terms is kept, output sorted by `n`.
+- Standard library only. Paragraphs longer than `max_chars` are cut into `max_chars` pieces so no chunk exceeds it.
